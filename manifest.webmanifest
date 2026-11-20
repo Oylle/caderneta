@@ -1,8 +1,8 @@
 {
   "id": "./",
-  "name": "Caderneta de Florescimento",
-  "short_name": "Caderneta",
-  "description": "Contagem de florescimento no campo, com GPS e envio para o Cronograma de Campo.",
+  "name": "Vana Caderneta",
+  "short_name": "Vana",
+  "description": "Vana Caderneta — contagem de florescimento no campo, com GPS e envio para o Vana do computador. Um programa da Orshu.",
   "lang": "pt-BR",
   "start_url": "./",
   "scope": "./",
@@ -10,11 +10,31 @@
   "orientation": "portrait",
   "background_color": "#ECF0F5",
   "theme_color": "#1D4F9C",
-  "categories": ["productivity", "utilities"],
+  "categories": [
+    "productivity",
+    "utilities"
+  ],
   "icons": [
-    {"src": "icone-192.png", "sizes": "192x192", "type": "image/png"},
-    {"src": "icone-512.png", "sizes": "512x512", "type": "image/png"},
-    {"src": "icone-mascara-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"},
-    {"src": "icone.svg", "sizes": "any", "type": "image/svg+xml"}
+    {
+      "src": "icone-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icone-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icone-mascara-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icone.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
   ]
 }

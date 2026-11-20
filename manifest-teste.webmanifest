@@ -1,8 +1,8 @@
 {
   "id": "./",
-  "name": "Caderneta TESTE (2.4)",
-  "short_name": "Cad. TESTE",
-  "description": "Versão de TESTE da Caderneta 2.4. Os dados daqui ficam separados dos da Caderneta de uso real.",
+  "name": "Vana Caderneta TESTE (2.5)",
+  "short_name": "Vana TESTE",
+  "description": "Versão de TESTE da Vana Caderneta 2.5. Os dados daqui ficam separados dos da Caderneta de uso real.",
   "lang": "pt-BR",
   "start_url": "./",
   "scope": "./",
@@ -10,11 +10,31 @@
   "orientation": "portrait",
   "background_color": "#ECF0F5",
   "theme_color": "#1D4F9C",
-  "categories": ["productivity", "utilities"],
+  "categories": [
+    "productivity",
+    "utilities"
+  ],
   "icons": [
-    {"src": "icone-192.png", "sizes": "192x192", "type": "image/png"},
-    {"src": "icone-512.png", "sizes": "512x512", "type": "image/png"},
-    {"src": "icone-mascara-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"},
-    {"src": "icone.svg", "sizes": "any", "type": "image/svg+xml"}
+    {
+      "src": "icone-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icone-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icone-mascara-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icone.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
   ]
 }

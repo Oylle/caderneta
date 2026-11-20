@@ -9,8 +9,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Caderneta">
 <meta name="format-detection" content="telephone=no">
-<meta name="description" content="Contagem de florescimento no campo, com GPS e envio para o Cronograma de Campo.">
-<title>Caderneta de Florescimento</title>
+<meta name="description" content="Vana Caderneta — contagem de florescimento no campo, com GPS e envio para o Vana do computador. Um programa da Orshu.">
+<title>Vana Caderneta</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icone.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icone-180.png">
@@ -293,6 +293,10 @@ details.sec[open] > summary{border-bottom:1px solid var(--linha)}
 .chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;background:var(--sup);border:1px solid var(--linha);min-width:0}
 .chip .ico{color:var(--gps)}
 .nome-longo{font-weight:600}
+.sobre-vana{margin:18px 2px 4px;padding:14px;border:1px solid var(--linha);border-radius:14px;background:var(--sup);display:grid;gap:10px}
+.sv-logo svg{height:40px;width:auto;display:block}
+.sv-orshu{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.sv-orshu img{height:40px;width:auto}
 .selo-teste{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:6px;background:#F2B400;color:#1B1B1B;font-family:system-ui,sans-serif;font-size:11px;font-weight:800;letter-spacing:.06em;vertical-align:2px}
 @media (max-width:430px){.nome-longo{display:none}}
 .rodape-acao{position:fixed;left:0;right:0;bottom:calc(62px + env(safe-area-inset-bottom,0px));z-index:30;
@@ -311,6 +315,7 @@ details.sec[open] > summary{border-bottom:1px solid var(--linha)}
 
 /* tabelas */
 .tab-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--linha);border-radius:12px;background:var(--sup)}
+.pf-tab tr.pf-sep td{border-top:2px solid var(--linha)}
 table{border-collapse:collapse;width:100%;font-size:13.5px}
 th,td{padding:7px 10px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--linha);font-variant-numeric:tabular-nums}
 th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:var(--sup)}
@@ -356,6 +361,10 @@ td.pol{color:var(--r3);font-weight:700}
   .pr-cab{display:flex;gap:12px;align-items:flex-start;border-bottom:2px solid #000;padding-bottom:7px;margin-bottom:10px}
   .pr-cab h1{font-size:17pt}
   .pr-sec{margin:10px 0;break-inside:avoid}
+  .pr-sec-fotos{break-inside:auto}
+  .pr-fotos{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .pr-fotos figure{margin:0;break-inside:avoid}.pr-fotos img{width:100%;max-height:85mm;object-fit:contain;border:1px solid #bbb}
+  .pr-fotos figcaption{font-size:7.5pt;color:#333;margin-top:2px}
   .pr-sec h3{font-size:10pt;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid #888;padding-bottom:2px;margin-bottom:6px}
   .pr-kv{display:grid;grid-template-columns:repeat(3,1fr);gap:3px 14px;font-size:9pt}
   .pr-tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
@@ -386,7 +395,7 @@ main.com-rodape{padding-bottom:calc(176px + env(safe-area-inset-bottom,0px))}
 <div class="app">
   <header class="topo">
     <span id="marca"></span>
-    <div class="topo-txt"><div class="topo-nome">Caderneta<span class="nome-longo"> de Florescimento</span></div><div class="topo-sub" id="topo-sub">abrindo…</div></div>
+    <div class="topo-txt"><div class="topo-nome">Vana<span class="nome-longo"> Caderneta</span></div><div class="topo-sub" id="topo-sub">abrindo…</div></div>
     <div class="topo-acoes">
       <button type="button" class="btn-ico chip-gps" id="b-gps" aria-label="GPS — abrir o mapa"><i></i>GPS</button>
       <button type="button" class="btn-ico" id="b-sol" aria-label="Modo sol: contraste máximo" aria-pressed="false"></button>
@@ -407,7 +416,7 @@ main.com-rodape{padding-bottom:calc(176px + env(safe-area-inset-bottom,0px))}
    (cronograma/config.py e cronograma/regras.py). Mesmos limites, mesmas
    notas, mesma mensagem: o número do celular bate com o do computador.
    ===================================================================== */
-const VERSAO_APP = "2.4";
+const VERSAO_APP = "2.5";
 /* v2.4 — AMBIENTE DE TESTE. Com TESTE = true este app:
    • guarda os dados em chaves próprias: não enxerga nem altera os dados da Caderneta de uso
      real, mesmo publicado no mesmo site (onde o armazenamento do navegador é um só);
@@ -415,7 +424,7 @@ const VERSAO_APP = "2.4";
    • marca os arquivos que gera: o programa e a Caderneta de uso real não importam nada deles.
    Só passa para false na liberação da 2.4 (ver README.md da pasta v2.4, "Liberação"). */
 const TESTE = false;
-const ROTULO_APP = "Caderneta de Florescimento " + VERSAO_APP + (TESTE ? " TESTE" : "");
+const ROTULO_APP = "Vana Caderneta " + VERSAO_APP + (TESTE ? " TESTE" : "");
 const ARQ_MANIFEST = TESTE ? "manifest-teste.webmanifest" : "manifest.webmanifest";
 const MARCA_ARQ = TESTE ? "TESTE_" : "";      /* início do nome dos arquivos gerados */
 if (TESTE) {
@@ -939,6 +948,7 @@ function mensagemWhatsapp(ctx){
   if (i.tempo || i.temperatura || i.ventos)
     L.push("", "*CLIMA:*", "TEMPO: " + (i.tempo || "-").toUpperCase(),
            "TEMPERATURA: " + (i.temperatura || "-").toUpperCase(), "VENTOS: " + (i.ventos || "-").toUpperCase());
+  L.push.apply(L, pfMensagem(i, d));     /* v2.5: ponto fixo, repetição por repetição */
   if (opc.recomendacao === "sempre" || (opc.recomendacao === "risco" && cl.nivel >= 1))
     L.push("", "*RECOMENDAÇÃO:*", ctx.recTexto || "");
   if (opc.proxima && i.proxima) L.push("", "*PRÓXIMA INSPEÇÃO:* " + dataBR(i.proxima));
@@ -1142,7 +1152,7 @@ function novaInspecao(campo){
     situacao: ant ? ant.situacao : "Em despendoamento", isolamento: ant ? ant.isolamento : "Conforme",
     tempo:"Sol", temperatura:"Média", ventos:"Leves", estigmaSeco:"", monitoramento:"",
     pontos:pts, caminhamento:{}, marcas:[],
-    pontoFixo:{reps:8, er:[], m1a:[], m2a:[], m1b:[], m2b:[], obs:""},
+    pontoFixo:{reps:3, obs:""},
     obs:{livre:"", pm1:"", pm2:"", ef:""}, recomendacoes:"", recomAuto:true,
     proxima:somaDias(hojeISO(), 2), gps:null, trilha:[], exemplo:!!campo.exemplo,
     criado:Date.now(), alterado:Date.now(), enviadoEm:0, seguroPC:0,
@@ -1361,7 +1371,7 @@ function normalizarInsp(i){
   n.caminhamento = Object.assign({}, n.caminhamento || {});
   n.marcas = Array.isArray(n.marcas) ? n.marcas : [];
   n.trilha = Array.isArray(n.trilha) ? n.trilha : [];
-  n.pontoFixo = Object.assign({reps:8, er:[], m1a:[], m2a:[], m1b:[], m2b:[], obs:""}, n.pontoFixo || {});
+  n.pontoFixo = Object.assign({reps:3, obs:""}, n.pontoFixo || {});
   if (typeof n.obs === "string") n.obs = {livre:n.obs, pm1:"", pm2:"", ef:""};
   n.obs = Object.assign({livre:"", pm1:"", pm2:"", ef:""}, n.obs || {});
   ["estigmaSeco", "monitoramento", "lider", "jaleco", "situacao", "isolamento", "tempo", "temperatura", "ventos",
@@ -1576,7 +1586,7 @@ async function tirarFoto(i, idxPonto){
   i.fotos.push({id:id, ponto:idxPonto != null ? idxPonto + 1 : null, t:agora.getTime(),
     lat:g ? +g.lat.toFixed(7) : null, lon:g ? +g.lon.toFixed(7) : null, acc:g ? Math.round(g.acc || 0) : null,
     fonte:g ? (g.fonte || "gps") : "", legenda:"", autor:DB.usuario ? DB.usuario.nome || DB.usuario.codigo : "",
-    relatorio:false, w:w, h:hh, bytes:blob.size});
+    relatorio:true, w:w, h:hh, bytes:blob.size});   /* v2.4: foto vai para o relatório (desmarque se não quiser) */
   tocar(i); salvar(); render();
   aviso("Foto gravada" + (g ? " com GPS ±" + Math.round(g.acc || 0) + " m" : " (sem GPS)"));
 }
@@ -1787,11 +1797,11 @@ function pacoteParaPC(soNovas){
 }
 /* Arquivo gerado no ambiente de TESTE: os dados vão dentro de "dados", sem "campos" nem
    "inspecoes" no nível de cima — assim o programa e a Caderneta de uso real não encontram
-   nada para importar nele. Só o Cronograma 2.4 em modo teste (e esta Caderneta) o abrem. */
+   nada para importar nele. Só o Vana 2.5 do computador em modo teste (e esta Caderneta) o abrem. */
 function embrulharTeste(pac){
   if (!TESTE) return pac;
   return {formato:pac.formato, versao:pac.versao, teste:true,
-    aviso:"ARQUIVO DE TESTE da Caderneta 2.4 — só entra no Cronograma de Campo 2.4 em modo teste.",
+    aviso:"ARQUIVO DE TESTE da Caderneta 2.5 — só entra no Vana 2.5 do computador em modo teste.",
     app:pac.app, exportadoEm:pac.exportadoEm, aparelho:pac.aparelho, dados:pac};
 }
 function desembrulharTeste(d){
@@ -2686,11 +2696,11 @@ const ICONES = {
   camera:'<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.6"/>',
 };
 function ico(n, extra){ return '<svg class="ico' + (extra ? " " + extra : "") + '" viewBox="0 0 24 24" aria-hidden="true">' + (ICONES[n] || "") + "</svg>"; }
-const MARCA = '<svg class="marca" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="#1D4F9C"/>' +
-  '<path d="M32 54V15" stroke="#F2B400" stroke-width="4.4" stroke-linecap="round"/>' +
-  '<path d="M32 27 21.5 15.5M32 34l11-12M32 41.5 23.5 31M32 23.5l8-10.5" stroke="#F2B400" stroke-width="3.4" stroke-linecap="round"/>' +
-  '<circle cx="19.5" cy="13.5" r="2.6" fill="#FFE08A"/><circle cx="45" cy="20" r="2.6" fill="#FFE08A"/><circle cx="32" cy="10.5" r="2.8" fill="#FFE08A"/>' +
-  '<path d="M17 53c4-6 9.5-8 15-8s11 2 15 8" stroke="#9FD3A7" stroke-width="3.4" fill="none" stroke-linecap="round"/></svg>';
+/* v2.5: marca do Vana (Vána, a Valië das flores; os Vanir; vana = bosque) e da Orshu, dona do Vana */
+const MARCA = '<svg class="marca" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="#0E4A3C"/><path d="M32 54C25.5 46.5 15.5 37 13 16.5c9.5 5 16.5 14 19 37.5Z" fill="#8FDDBE"/><path d="M32 54C38.5 46.5 48.5 37 51 16.5c-9.5 5-16.5 14-19 37.5Z" fill="#4FB98F"/><g transform="translate(32 21)"><path id="vana-p" d="M0-11.5C2.2-6 2.2-3.2 0 0-2.2-3.2-2.2-6 0-11.5Z" fill="#F4B63A"/><use href="#vana-p" transform="rotate(60)"/><use href="#vana-p" transform="rotate(120)"/><use href="#vana-p" transform="rotate(180)"/><use href="#vana-p" transform="rotate(240)"/><use href="#vana-p" transform="rotate(300)"/><circle r="2.6" fill="#FFE7A3"/></g></svg>';
+const VANA_LOGO_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 236 64"><g>  <rect width="64" height="64" rx="15" fill="#0E4A3C"/>  <path d="M32 54C25.5 46.5 15.5 37 13 16.5c9.5 5 16.5 14 19 37.5Z" fill="#8FDDBE"/>  <path d="M32 54C38.5 46.5 48.5 37 51 16.5c-9.5 5-16.5 14-19 37.5Z" fill="#4FB98F"/>  <g transform="translate(32 21)">    <path id="vl-p" d="M0-11.5C2.2-6 2.2-3.2 0 0-2.2-3.2-2.2-6 0-11.5Z" fill="#F4B63A"/>    <use href="#vl-p" transform="rotate(60)"/><use href="#vl-p" transform="rotate(120)"/><use href="#vl-p" transform="rotate(180)"/>    <use href="#vl-p" transform="rotate(240)"/><use href="#vl-p" transform="rotate(300)"/>    <circle r="2.6" fill="#FFE7A3"/>  </g></g><g transform="translate(84 14) scale(0.95)">  <g fill="none" stroke="#0E4A3C" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">    <path d="M0 5 13.5 32 27 5"/>    <circle cx="49" cy="18.5" r="13"/><path d="M62 5.5v26.5"/>    <path d="M75 32V18.5a12.5 12.5 0 0 1 25 0V32"/>    <circle cx="122" cy="18.5" r="13"/><path d="M135 5.5v26.5"/>  </g></g></svg>';
+const ORSHU_LOGO = "data:image/png;base64,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";
+const PROPRIEDADE = "Vana é um programa da Orshu. © " + new Date().getFullYear() + " Orshu. Todos os direitos reservados.";
 
 /* ---------------------------------------------------------------- aviso (toast) */
 let tAviso = null;
@@ -3163,29 +3173,79 @@ function gruposAtipicas(ns, obj){
   });
   return h;
 }
-const PF_LINHAS = [["er", "E.R.", "ER"], ["m1a", "M1P-A", "M1P-A"], ["m2a", "M2P-A", "M2P-A"], ["m1b", "M1P-B", "M1P-B"], ["m2b", "M2P-B", "M2P-B"]];
+/* v2.5 — ponto fixo como se anota no campo: cada coluna é uma REPETIÇÃO; em cada uma, Macho 1 e 2
+   de um lado, uma leitura por linha de fêmea (a proporção F:M do campo diz quantas) e Macho 1 e 2
+   do outro lado. As chaves são as mesmas do PC (M1P-A, F1…F8, M1P-B). O modelo antigo (er, m1a…)
+   continua aparecendo se tiver dado. */
+const PF_ANTIGO = [["er", "E.R. (antigo)"], ["m1a", "M1P-A (antigo)"], ["m2a", "M2P-A (antigo)"], ["m1b", "M1P-B (antigo)"], ["m2b", "M2P-B (antigo)"]];
+function pfTemDado(arr){ return Array.isArray(arr) && arr.some(x => x !== null && x !== "" && x !== undefined); }
+function pfLinhas(i){
+  const c = campoPor(i.campoId) || {}, pf = i.pontoFixo || {};
+  let nf = Math.round(num(c.propF, 0)) || 5, nm = Math.round(num(c.machos, 2)) || 2;
+  Object.keys(pf).forEach(k => {
+    let m = /^F(\d)$/.exec(k); if (m && pfTemDado(pf[k])) nf = Math.max(nf, +m[1]);
+    m = /^M(\d)P-[AB]$/.exec(k); if (m && pfTemDado(pf[k])) nm = Math.max(nm, +m[1]);
+  });
+  nf = Math.max(1, Math.min(8, nf)); nm = Math.max(1, Math.min(3, nm));
+  const L = [];
+  for (let j = 1; j <= nm; j++) L.push(["M" + j + "P-A", "Macho " + j, "m"]);
+  for (let j = 1; j <= nf; j++) L.push(["F" + j, "Fêmea " + j, "f"]);
+  for (let j = 1; j <= nm; j++) L.push(["M" + j + "P-B", "Macho " + j, "m"]);
+  PF_ANTIGO.forEach(([k, rot]) => { if (pfTemDado(pf[k])) L.push([k, rot, "a"]); });
+  return L;
+}
 function pfMedia(arr){ const v = (arr || []).filter(x => x !== null && x !== "" && x !== undefined).map(x => num(x)); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; }
+function pfGrupos(i){
+  const pf = i.pontoFixo || {}, g = {fem:[], m1:[], m2:[], m3:[]};
+  Object.keys(pf).forEach(k => {
+    const vals = (Array.isArray(pf[k]) ? pf[k] : []).filter(x => x !== null && x !== "" && x !== undefined).map(x => num(x));
+    if (/^F\d$/.test(k) || k === "er") g.fem.push.apply(g.fem, vals);
+    const m = /^M(\d)P-[AB]$/.exec(k) || /^m(\d)[ab]$/.exec(k); if (m && g["m" + m[1]]) g["m" + m[1]].push.apply(g["m" + m[1]], vals);
+  });
+  const med = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
+  return {fem:med(g.fem), m1:med(g.m1), m2:med(g.m2), m3:med(g.m3)};
+}
 function pfResumo(i){
+  const g = pfGrupos(i);
+  if (g.fem == null && g.m1 == null && g.m2 == null) return "não usado";
+  return [["fem", "Fêmeas"], ["m1", "M1"], ["m2", "M2"], ["m3", "M3"]].filter(([k]) => g[k] != null).map(([k, t]) => t + " " + fmtNum(g[k], 1)).join(" · ");
+}
+function pfReps(i){
   const pf = i.pontoFixo || {};
-  const er = pfMedia(pf.er);
-  return er == null ? "não usado" : "E.R. média " + pct(er, 1);
+  let usadas = 0;
+  Object.keys(pf).forEach(k => { if (Array.isArray(pf[k])) pf[k].forEach((x, j) => { if (x !== null && x !== "" && x !== undefined) usadas = Math.max(usadas, j + 1); }); });
+  return Math.max(usadas, Math.min(8, num(pf.reps, 3) || 3));
 }
 function blocoPontoFixo(i){
-  const pf = i.pontoFixo, n = num(pf.reps, 8) || 8;
-  let h = '<p class="peq mut" style="margin:12px 15px">Pontos marcados para acompanhar a coincidência. A % é a média das leituras, como na Caderneta.</p>';
-  h += '<div class="tab-wrap" style="margin:0 12px 12px"><table><thead><tr><th>Linha</th>';
-  for (let j = 1; j <= n; j++) h += "<th>" + j + "</th>";
-  h += "<th>Total</th><th>%</th></tr></thead><tbody>";
-  PF_LINHAS.forEach(([k, rot]) => {
-    const arr = pf[k] || [];
-    h += '<tr><td style="font-family:var(--f-titulo);font-weight:700">' + rot + "</td>";
-    for (let j = 0; j < n; j++) h += '<td style="padding:4px"><input class="ct-n" style="width:52px;height:42px;font-size:19px" inputmode="numeric" pattern="[0-9]*" enterkeyhint="next" data-pf="' + k + '" data-j="' + j + '" value="' + (arr[j] == null ? "" : esc(arr[j])) + '" aria-label="' + rot + " leitura " + (j + 1) + '"></td>';
-    const tot = arr.reduce((s, x) => s + num(x), 0), med = pfMedia(arr);
-    h += '<td id="pf-t-' + k + '">' + (med == null ? "—" : fmtNum(tot, 0)) + '</td><td id="pf-m-' + k + '">' + (med == null ? "—" : fmtNum(med, 1)) + "</td></tr>";
+  const pf = i.pontoFixo, n = pfReps(i), L = pfLinhas(i);
+  let h = '<p class="peq mut" style="margin:12px 15px">Cada coluna é uma <b>repetição</b>, na ordem em que se anota: Macho 1 e 2, as fêmeas, Macho 1 e 2. ✓ (ou Enter) desce na mesma repetição. Vai na mensagem do WhatsApp.</p>';
+  h += '<div class="tab-wrap" style="margin:0 12px 8px"><table class="pf-tab"><thead><tr><th>Linha</th>';
+  for (let j = 1; j <= n; j++) h += "<th>Rep. " + j + "</th>";
+  h += "<th>Média</th></tr></thead><tbody>";
+  L.forEach(([k, rot, tipo], li) => {
+    const arr = pf[k] || [], sep = li && tipo !== L[li - 1][2] ? ' class="pf-sep"' : "";
+    h += "<tr" + sep + '><td style="font-family:var(--f-titulo);font-weight:700;white-space:nowrap' + (tipo === "f" ? ";color:var(--pri)" : "") + '">' + rot + "</td>";
+    for (let j = 0; j < n; j++) h += '<td style="padding:4px"><input class="ct-n" style="width:56px;height:42px;font-size:19px" inputmode="numeric" pattern="[0-9]*" enterkeyhint="next" data-pf="' + k + '" data-j="' + j + '" data-li="' + li + '" value="' + (arr[j] == null ? "" : esc(arr[j])) + '" aria-label="' + rot + ", repetição " + (j + 1) + '"></td>';
+    const med = pfMedia(arr);
+    h += '<td id="pf-m-' + k + '">' + (med == null ? "—" : fmtNum(med, 1)) + "</td></tr>";
   });
   h += "</tbody></table></div>";
+  h += '<div class="btns" style="padding:0 15px 8px">' + (n < 8 ? '<button class="btn peq" data-a="pf-rep">' + ico("mais") + " Repetição</button>" : "") +
+    '<span class="peq mut" id="pf-resumo" style="align-self:center">' + esc(pfResumo(i) === "não usado" ? "" : "Médias: " + pfResumo(i)) + "</span></div>";
   h += '<div style="padding:0 15px 14px">' + fTa("insp.pontoFixo.obs", "Observações do ponto fixo", pf.obs, {linhas:2}) + "</div>";
   return h;
+}
+/* bloco *PONTO FIXO* da mensagem, como a equipe manda */
+function pfMensagem(i, d){
+  const pf = i.pontoFixo || {}, n = pfReps(i), L = pfLinhas(i).filter(([k, , t]) => t !== "a");
+  const out = [];
+  for (let j = 0; j < n; j++) {
+    const vals = L.map(([k, rot]) => [rot, (pf[k] || [])[j]]);
+    if (!vals.some(([, v]) => v !== null && v !== "" && v !== undefined)) continue;
+    out.push("", "*REPETICAO " + (j + 1) + ":*");
+    vals.forEach(([rot, v]) => out.push(semAcento(rot) + ": " + (v === null || v === "" || v === undefined ? "-" : nMsg(num(v), 1, d))));
+  }
+  return out.length ? ["", "*PONTO FIXO:*"].concat(out) : [];
 }
 
 /* ================================================================= PONTO */
@@ -3369,8 +3429,10 @@ function telaRel(){
     '<div class="btns"><button class="btn pri" data-a="copiar-msg">' + ico("copiar") + ' Copiar</button>' +
     (navigator.share && !emVisualizador() ? '<button class="btn" data-a="compartilhar-msg">' + ico("compartilhar") + " Compartilhar</button>" : "") +
     '<a class="btn" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(msg) + '">' + ico("conversa") + " WhatsApp</a></div></div>";
-  if (!emVisualizador()) h += '<div class="btns"><button class="btn" data-a="pdf">' + ico("pdf") + " Salvar em PDF</button></div>" +
-    '<p class="peq mut" style="margin:-6px 2px 0">O PDF sai pela impressão do celular: escolha “Salvar como PDF” (no iPhone: Compartilhar › Imprimir › abrir com dois dedos).</p>';
+  if (!emVisualizador()) h += '<div class="btns">' + (podeCompartilharArquivo() ? '<button class="btn pri" data-a="pdf-arquivo" data-m="compartilhar">' + ico("pdf") + " Relatório PDF com fotos</button>" : "") +
+    '<button class="btn' + (podeCompartilharArquivo() ? "" : " pri") + '" data-a="pdf-arquivo" data-m="salvar">' + ico("baixar") + " Salvar PDF</button>" +
+    '<button class="btn" data-a="pdf">' + ico("pdf") + " Imprimir</button></div>" +
+    '<p class="peq mut" style="margin:-6px 2px 0">O PDF leva a identificação, os índices, ponto a ponto, ponto fixo, observações e as fotos (as marcadas “Relatório”; sem marca, todas). Funciona sem internet.</p>';
   h += sec("sec-medias", "Médias da contagem", m.n + " pontos · " + m.base + " plantas", tabelaMedias(m), {liso:true});
   h += sec("sec-por-ponto", "Ponto a ponto", "", tabelaPorPonto(i, c), {liso:true});
   const d = dadosDoMapa(i, c), svg = mapaSVG(Object.assign({}, d, {eu:null}));
@@ -3426,7 +3488,7 @@ function telaDados(){
     "<p style=\"margin:0 0 8px\"><b>Pelo WhatsApp ou e-mail:</b> toque em <i>Compartilhar arquivo</i> e mande para você mesmo. No computador, baixe o arquivo <span class=\"mono\">caderneta_….json</span>.</p>" +
     "<p style=\"margin:0 0 8px\"><b>Android pelo cabo:</b> toque em <i>Salvar no aparelho</i> (vai para Downloads). Ligue o cabo, escolha <i>Transferência de arquivos</i> no celular e copie o arquivo da pasta Download.</p>" +
     "<p style=\"margin:0 0 8px\"><b>iPhone:</b> <i>Compartilhar arquivo</i> › <i>Salvar em Arquivos</i>, ou AirDrop/e-mail para o computador.</p>" +
-    "<p style=\"margin:0\"><b>No programa Cronograma de Campo:</b> menu <i>Arquivo › Importar contagens…</i> e escolha o .json. Inspeções que você corrigir no celular e mandar de novo são atualizadas lá.</p></div></details>";
+    "<p style=\"margin:0\"><b>No Vana do computador:</b> menu <i>Arquivo › Importar contagens…</i> e escolha o .json. Inspeções que você corrigir no celular e mandar de novo são atualizadas lá.</p></div></details>";
   env += "</div>";
   h += sec("sec-enviar", "Enviar para o computador", pend.length ? pend.length + " para enviar" : "em dia", env, {aberto:true});
   h += secWifi();
@@ -3440,8 +3502,10 @@ function telaDados(){
   const temEx = DB.campos.some(c => c.exemplo);
   h += '<div class="btns">' + (temEx ? '<button class="btn" data-a="apagar-exemplo">Apagar os dados de exemplo</button>' : '<button class="btn" data-a="criar-exemplo">Mostrar dados de exemplo</button>') +
     '<button class="btn perigo" data-a="apagar-tudo">' + ico("lixo") + " Apagar tudo</button></div>";
-  h += '<p class="peq mut" style="text-align:center;margin:6px 0 0">' + ROTULO_APP + " · mesmas regras do Cronograma de Campo · aparelho " + esc(DB.aparelho.slice(-6)) +
+  h += '<p class="peq mut" style="text-align:center;margin:6px 0 0">' + ROTULO_APP + " · mesmas regras do Vana do computador · aparelho " + esc(DB.aparelho.slice(-6)) +
     (DB.usuario ? " · " + esc(DB.usuario.nome || "") + " (" + esc(DB.usuario.codigo) + ")" : " · sem usuário: receba os campos do PC para parear") + "</p>";
+  h += '<div class="sobre-vana"><div class="sv-logo">' + VANA_LOGO_SVG + '</div><p class="peq mut">O nome vem de <b>Vána</b>, a Valië das flores e da juventude em <i>O Silmarillion</i> (Tolkien) — por onde passa, as flores se abrem —, dos <b>Vanir</b>, deuses nórdicos da fertilidade e da colheita, e de <i>vana</i>, “bosque” em sânscrito. Um nome para quem acompanha o florescimento.</p>' +
+    '<div class="sv-orshu"><img src="' + ORSHU_LOGO + '" alt="Orshu" width="120" height="47"><span class="peq mut">' + esc(PROPRIEDADE) + "</span></div></div>";
   return h + "</div>";
 }
 function estadoInstalacao(){
@@ -3461,7 +3525,7 @@ function htmlInstalar(){
          "<p style=\"margin:0\"><b>iPhone (Safari):</b> botão Compartilhar › <i>Adicionar à Tela de Início</i>.</p>" +
          "<p style=\"margin:0\">Depois de instalado, abra pelo ícone: funciona sem internet e o GPS fica liberado.</p>";
   } else {
-    h += "<p style=\"margin:0\">Para funcionar sem internet, com GPS, o app precisa ser aberto <b>uma vez</b> por um endereço <b>https</b> e instalado na tela inicial. No Cronograma do computador: <i>Arquivo › Caderneta do celular: publicar e instalar</i>. Cada inspetor publica a sua no GitHub Pages da conta dele (grátis) e abre esse endereço no celular pelo QR code.</p>" +
+    h += "<p style=\"margin:0\">Para funcionar sem internet, com GPS, o app precisa ser aberto <b>uma vez</b> por um endereço <b>https</b> e instalado na tela inicial. No Vana do computador: <i>Arquivo › Caderneta do celular: publicar e instalar</i>. Cada inspetor publica a sua no GitHub Pages da conta dele (grátis) e abre esse endereço no celular pelo QR code.</p>" +
          "<p style=\"margin:0\">Enquanto isso, esta versão funciona para testar — os dados ficam só neste navegador.</p>";
   }
   return h + "</div>";
@@ -3498,7 +3562,7 @@ function htmlSobre(){
     "<p style=\"margin:0 0 8px\"><b>F.F.P</b> (P.P. na mensagem) = soma dos tipos polinizando. <b>Classe:</b> até 0,10% Risco Baixo, até 0,20% Moderado, até 0,30% Alto, acima Crítico; atípicas polinizando (rogue + tiguera) também sobem a classe (0 / 0,05 / 0,10%).</p>" +
     "<p style=\"margin:0 0 8px\"><b>Notas 1/5/9</b> de despendoamento e de atípicas pela tabela do Caderno, conforme o E.R. (&lt;3%, 3–10%, &gt;10%). <b>Fase da curva</b> pelo pico do E.R. e do pólen: na queda o app não pede entrada de equipe.</p>" +
     "<p style=\"margin:0 0 8px\"><b>Caminhamento.</b> Pivô inteiro: 2 × raio ÷ largura do bloco; gleba: só o raio. Metade dos pontos na ida e metade na volta. Pontos pela área: até 2 ha 5, 24 ha 7, 40 ha 12, 56 ha 15, 80 ha 18, acima 21.</p>" +
-    "<p style=\"margin:0\">As mesmas regras do programa Cronograma de Campo — o número do celular é o mesmo do computador.</p></div>";
+    "<p style=\"margin:0\">As mesmas regras do Vana do computador — o número do celular é o mesmo do computador.</p></div>";
 }
 
 /* ================================================================= PDF (impressão) */
@@ -3522,9 +3586,340 @@ function htmlImpressao(ctx){
   if (svg) h += '<div class="pr-sec"><h3>Mapa</h3><div style="max-width:120mm">' + svg + "</div></div>";
   h += '<div class="pr-sec"><h3>Observações</h3><p style="white-space:pre-wrap">' + esc(ctx.obsTexto || "—") + "</p></div>";
   h += '<div class="pr-sec"><h3>Recomendação</h3><p style="white-space:pre-wrap">' + esc(ctx.recTexto) + "</p>" + (i.proxima ? "<p><b>Próxima inspeção:</b> " + dataBR(i.proxima) + "</p>" : "") + "</div>";
+  /* v2.4: fotos marcadas "Relatório" (com ponto, hora, GPS e legenda) */
+  const fr = (i.fotos || []).filter(f => f.relatorio);
+  if (fr.length) h += '<div class="pr-sec pr-sec-fotos"><h3>Fotos</h3><div class="pr-fotos">' + fr.map(f => '<figure><img data-foto="' + esc(f.id) + '" alt=""><figcaption>' +
+    esc([f.ponto ? "Ponto " + f.ponto : "", new Date(f.t).toLocaleString("pt-BR", {dateStyle:"short", timeStyle:"short"}),
+         f.lat != null ? f.lat.toFixed(5) + ", " + f.lon.toFixed(5) + " ±" + f.acc + " m" : "sem GPS", f.legenda].filter(Boolean).join(" · ")) + "</figcaption></figure>").join("") + "</div></div>";
   h += '<div class="pr-ass"><div>' + esc(i.representante || "Representante") + "<br><small>Representante</small></div><div>" + esc(i.at || "AT") + "<br><small>Assistente técnico</small></div></div>";
-  h += '<div class="pr-pe"><span>' + ROTULO_APP + " · " + dataBR(hojeISO()) + "</span><span>" + esc(nomeCampo(c)) + " · nº " + esc(i.numero) + "</span></div>";
+  h += '<div class="pr-pe"><span>' + ROTULO_APP + " · " + dataBR(hojeISO()) + " · " + esc(PROPRIEDADE) + "</span><span>" + esc(nomeCampo(c)) + " · nº " + esc(i.numero) + "</span></div>";
   return h;
+}
+
+/* ================================================================= PDF com fotos (v2.5)
+   O celular monta o arquivo .pdf sozinho, sem internet e sem biblioteca: texto em Helvetica
+   (WinAnsi, com acentos), tabelas e as fotos JPEG do jeito que estão guardadas. Compartilha
+   (WhatsApp, e-mail, Drive) ou salva no aparelho. A impressão continua como alternativa. */
+const PDF_LARG = {n:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584,761,556,0,222,556,333,1000,556,556,333,1000,667,333,1000,0,611,0,0,222,222,333,333,350,556,1000,333,1000,500,333,944,0,500,667,278,333,556,556,556,556,260,556,333,737,370,556,584,333,737,333,400,584,333,333,333,556,537,278,333,333,365,556,834,834,834,611,667,667,667,667,667,667,1000,722,667,667,667,667,278,278,278,278,722,722,778,778,778,778,778,584,778,722,722,722,722,667,667,611,556,556,556,556,556,556,889,500,556,556,556,556,278,278,278,278,556,556,556,556,556,556,556,584,611,556,556,556,556,500,556,500], b:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,278,333,474,556,556,889,722,238,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,333,333,584,584,584,611,975,722,722,722,722,667,611,778,722,278,556,722,611,833,722,778,667,778,722,667,611,722,667,944,667,667,611,333,278,333,584,556,333,556,611,556,611,556,333,611,611,278,278,556,278,889,611,611,611,611,389,556,333,611,556,778,556,556,500,389,280,389,584,761,556,0,278,556,500,1000,556,556,333,1000,667,333,1000,0,611,0,0,278,278,500,500,350,556,1000,333,1000,556,333,944,0,500,667,278,333,556,556,556,556,280,556,333,737,370,556,584,333,737,333,400,584,333,333,333,611,556,278,333,333,365,556,834,834,834,611,722,722,722,722,722,722,1000,722,667,667,667,667,278,278,278,278,722,722,778,778,778,778,778,584,778,722,722,722,722,667,667,611,556,556,556,556,556,556,889,556,556,556,556,556,278,278,278,278,611,611,611,611,611,611,611,584,611,611,611,611,611,556,611,556]};
+const PDF_CP1252 = {"€":128,"‚":130,"ƒ":131,"„":132,"…":133,"†":134,"‡":135,"ˆ":136,"‰":137,"Š":138,"‹":139,"Œ":140,"Ž":142,"‘":145,"’":146,"“":147,"”":148,"•":149,"–":150,"—":151,"˜":152,"™":153,"š":154,"›":155,"œ":156,"ž":158,"Ÿ":159};
+function pdfLimpo(s){
+  return String(s == null ? "" : s).replace(/≥/g, ">=").replace(/≤/g, "<=").replace(/→/g, "->").replace(/[✓✔]/g, "v")
+    .replace(/[⚠]/g, "!").replace(/ /g, " ").replace(/[ -​]/g, " ").replace(/[\ud800-\udfff]/g, "").replace(/[\r\t]/g, " ");
+}
+function pdfBytes(s){
+  let o = "";
+  for (const ch of pdfLimpo(s)) {
+    const c = ch.charCodeAt(0);
+    const b = (c >= 32 && c < 127) || (c >= 160 && c < 256) ? c : (PDF_CP1252[ch] || 63);
+    o += String.fromCharCode(b);
+  }
+  return o;
+}
+function pdfJpegInfo(u8){
+  if (u8[0] !== 0xFF || u8[1] !== 0xD8) return null;
+  let i = 2;
+  while (i < u8.length - 9) {
+    if (u8[i] !== 0xFF) { i++; continue; }
+    const m = u8[i + 1];
+    if (m >= 0xC0 && m <= 0xCF && m !== 0xC4 && m !== 0xC8 && m !== 0xCC)
+      return {h:(u8[i + 5] << 8) | u8[i + 6], w:(u8[i + 7] << 8) | u8[i + 8], comp:u8[i + 9]};
+    if (m === 0xD8 || m === 0x01 || (m >= 0xD0 && m <= 0xD7)) { i += 2; continue; }
+    i += 2 + ((u8[i + 2] << 8) | u8[i + 3]);
+  }
+  return null;
+}
+class PdfSimples {
+  constructor(){ this.W = 595.28; this.H = 841.89; this.paginas = []; this.imgs = []; this.nova(); }
+  nova(){ this.pg = []; this.paginas.push(this.pg); }
+  larg(s, tam, negrito){ const t = PDF_LARG[negrito ? "b" : "n"]; let w = 0; for (const ch of pdfBytes(s)) w += t[ch.charCodeAt(0)] || 556; return w * tam / 1000; }
+  cor(c, tipo){ const h = String(c || "#000000").replace("#", ""); const v = [0, 2, 4].map(k => (parseInt(h.substr(k, 2), 16) / 255).toFixed(3)).join(" "); return v + (tipo === "f" ? " rg" : " RG"); }
+  texto(x, y, s, o){
+    o = o || {}; const tam = o.tam || 9, t = pdfBytes(s);
+    let xx = x; const w = this.larg(s, tam, o.negrito);
+    if (o.alinh === "dir") xx = x - w; else if (o.alinh === "centro") xx = x - w / 2;
+    const esc = t.replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
+    this.pg.push("BT " + this.cor(o.cor || "#1B2733", "f") + " /" + (o.negrito ? "F2" : "F1") + " " + tam + " Tf " + xx.toFixed(2) + " " + (this.H - y).toFixed(2) + " Td (" + esc + ") Tj ET");
+    return w;
+  }
+  quebrar(s, largura, tam, negrito){
+    const out = [];
+    String(s == null ? "" : s).split("\n").forEach(par => {
+      const pal = par.split(/ +/); let lin = "";
+      if (!par.trim()) { out.push(""); return; }
+      pal.forEach(p => {
+        const t = lin ? lin + " " + p : p;
+        if (this.larg(t, tam, negrito) <= largura || !lin) lin = t; else { out.push(lin); lin = p; }
+        while (this.larg(lin, tam, negrito) > largura && lin.length > 1) {          /* palavra maior que a linha */
+          let k = lin.length; while (k > 1 && this.larg(lin.slice(0, k), tam, negrito) > largura) k--;
+          out.push(lin.slice(0, k)); lin = lin.slice(k);
+        }
+      });
+      out.push(lin);
+    });
+    return out;
+  }
+  ret(x, y, w, h, o){
+    o = o || {}; let op = "";
+    if (o.preench) op += this.cor(o.preench, "f") + " ";
+    if (o.borda) op += this.cor(o.borda, "s") + " " + (o.lw || 0.6) + " w ";
+    op += x.toFixed(2) + " " + (this.H - y - h).toFixed(2) + " " + w.toFixed(2) + " " + h.toFixed(2) + " re " + (o.preench && o.borda ? "B" : o.preench ? "f" : "S");
+    this.pg.push(op);
+  }
+  linha(x1, y1, x2, y2, cor, lw){ this.pg.push(this.cor(cor || "#C9D3DC", "s") + " " + (lw || 0.6) + " w " + x1.toFixed(2) + " " + (this.H - y1).toFixed(2) + " m " + x2.toFixed(2) + " " + (this.H - y2).toFixed(2) + " l S"); }
+  jpeg(u8){
+    const inf = pdfJpegInfo(u8); if (!inf) return null;
+    const im = {id:"Im" + (this.imgs.length + 1), dados:u8, w:inf.w, h:inf.h, cs:inf.comp === 1 ? "/DeviceGray" : inf.comp === 4 ? "/DeviceCMYK" : "/DeviceRGB"};
+    this.imgs.push(im); return im;
+  }
+  imagem(im, x, y, w, h){ this.pg.push("q " + w.toFixed(2) + " 0 0 " + h.toFixed(2) + " " + x.toFixed(2) + " " + (this.H - y - h).toFixed(2) + " cm /" + im.id + " Do Q"); }
+  gerar(titulo){
+    const partes = [], offs = [];
+    let tam = 0;
+    const put = x => { const u = typeof x === "string" ? Uint8Array.from(x, c => c.charCodeAt(0) & 255) : x; partes.push(u); tam += u.length; };
+    const obj = (n, corpo, fluxo) => { offs[n] = tam; put(n + " 0 obj\n" + corpo); if (fluxo) { put("\nstream\n"); put(fluxo); put("\nendstream"); } put("\nendobj\n"); };
+    put("%PDF-1.4\n%\xE2\xE3\xCF\xD3\n");
+    const nPag = this.paginas.length, base = 5, nImg = this.imgs.length;
+    const kids = this.paginas.map((_, k) => (base + nImg + k * 2) + " 0 R").join(" ");
+    obj(1, "<< /Type /Catalog /Pages 2 0 R >>");
+    obj(2, "<< /Type /Pages /Kids [" + kids + "] /Count " + nPag + " >>");
+    obj(3, "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>");
+    obj(4, "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>");
+    this.imgs.forEach((im, k) => obj(base + k, "<< /Type /XObject /Subtype /Image /Width " + im.w + " /Height " + im.h + " /ColorSpace " + im.cs +
+      " /BitsPerComponent 8 /Filter /DCTDecode" + (im.cs === "/DeviceCMYK" ? " /Decode [1 0 1 0 1 0 1 0]" : "") + " /Length " + im.dados.length + " >>", im.dados));
+    const xo = this.imgs.length ? " /XObject << " + this.imgs.map((im, k) => "/" + im.id + " " + (base + k) + " 0 R").join(" ") + " >>" : "";
+    this.paginas.forEach((ops, k) => {
+      const np = base + nImg + k * 2, nc = np + 1, fl = ops.join("\n");
+      obj(np, "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 " + this.W + " " + this.H + "] /Resources << /Font << /F1 3 0 R /F2 4 0 R >>" + xo + " >> /Contents " + nc + " 0 R >>");
+      obj(nc, "<< /Length " + fl.length + " >>", fl);
+    });
+    const nInfo = base + nImg + nPag * 2;
+    const dataPdf = new Date().toISOString().replace(/[-:T]/g, "").slice(0, 14);
+    obj(nInfo, "<< /Title (" + pdfBytes(titulo || "Relatório").replace(/[()\\]/g, "") + ") /Producer (" + pdfBytes(ROTULO_APP) + ") /Creator (Vana - Orshu) /CreationDate (D:" + dataPdf + ") >>");
+    const xref = tam;
+    let x = "xref\n0 " + (nInfo + 1) + "\n0000000000 65535 f \n";
+    for (let n = 1; n <= nInfo; n++) x += String(offs[n]).padStart(10, "0") + " 00000 n \n";
+    put(x + "trailer\n<< /Size " + (nInfo + 1) + " /Root 1 0 R /Info " + nInfo + " 0 R >>\nstartxref\n" + xref + "\n%%EOF\n");
+    const out = new Uint8Array(tam); let p = 0; partes.forEach(u => { out.set(u, p); p += u.length; });
+    return out;
+  }
+}
+/* imagem (svg, png em data URI ou blob) -> JPEG com fundo branco, para o PDF */
+async function pdfParaJpeg(fonte, largura, qualidade){
+  const img = new Image();
+  const url = fonte instanceof Blob ? URL.createObjectURL(fonte) : fonte;
+  img.src = url;
+  try { await img.decode(); } catch (e) { if (fonte instanceof Blob) URL.revokeObjectURL(url); return null; }
+  const w = largura || img.naturalWidth || 400, h = Math.round(w * ((img.naturalHeight || 1) / (img.naturalWidth || 1)));
+  const cv = document.createElement("canvas"); cv.width = w; cv.height = h;
+  const g = cv.getContext("2d"); g.fillStyle = "#FFFFFF"; g.fillRect(0, 0, w, h); g.drawImage(img, 0, 0, w, h);
+  if (fonte instanceof Blob) URL.revokeObjectURL(url);
+  const b = await canvasParaBlob(cv, qualidade || 0.9);
+  return b ? new Uint8Array(await b.arrayBuffer()) : null;
+}
+const svgURL = s => "data:image/svg+xml;charset=utf-8," + encodeURIComponent(s.indexOf("xmlns=") > 0 ? s : s.replace("<svg ", '<svg xmlns="http://www.w3.org/2000/svg" '));
+
+async function relatorioPdf(i){
+  const ctx = contexto(i), c = ctx.campo || {}, m = ctx.met, cl = m.classe;
+  const P = new PdfSimples(), W = P.W, ML = 36, MR = W - 36, LARG = MR - ML, TOPO = 40, FUNDO = P.H - 50;
+  const VERDE = "#0E4A3C", TINTA = "#1B2733", TINTA2 = "#55636F", LINHA = "#D5DDE4", CLARO = "#F3F6F8";
+  let y = TOPO;
+  const logo = P.jpeg(await pdfParaJpeg(svgURL(VANA_LOGO_SVG), 520) || new Uint8Array());
+  const orshu = P.jpeg(await pdfParaJpeg(ORSHU_LOGO, 300) || new Uint8Array());
+  const cabecalho = primeira => {
+    if (primeira) {
+      if (logo) P.imagem(logo, ML, y, 110, 110 * logo.h / logo.w);
+      P.texto(MR, y + 10, "RELATÓRIO DE INSPEÇÃO DE FLORESCIMENTO", {tam:8, negrito:true, cor:TINTA2, alinh:"dir"});
+      P.texto(MR, y + 26, "Inspeção nº " + i.numero + " · " + nomeCampo(c), {tam:14, negrito:true, cor:TINTA, alinh:"dir"});
+      P.texto(MR, y + 40, dataBR(i.data) + (i.hora ? " às " + i.hora : "") + (c.hibrido ? " · " + c.hibrido : ""), {tam:9.5, cor:TINTA2, alinh:"dir"});
+      y += 52;
+      const cor = cl.cor || {"Risco Baixo":"#0B7A2A", "Risco Moderado":"#FAB219", "Risco Alto":"#EC835A", "Crítico":"#C0392B"}[cl.nome] || "#8A96A3";
+      P.ret(ML, y, LARG, 30, {preench:cor});
+      P.texto(ML + 10, y + 19.5, "SITUAÇÃO DO CAMPO: " + String(cl.nome || "").toUpperCase(), {tam:12, negrito:true, cor:corTextoPdf(cor)});
+      P.texto(MR - 10, y + 19.5, (cl.motivo || "").slice(0, 70), {tam:8.5, cor:corTextoPdf(cor), alinh:"dir"});
+      y += 42;
+    } else {
+      P.texto(ML, y + 8, "Inspeção nº " + i.numero + " · " + nomeCampo(c) + " · " + dataBR(i.data), {tam:8.5, negrito:true, cor:TINTA2});
+      P.linha(ML, y + 14, MR, y + 14, LINHA); y += 24;
+    }
+  };
+  const quebra = h => { if (y + h > FUNDO) { P.nova(); y = TOPO; cabecalho(false); return true; } return false; };
+  const titulo = t => { quebra(40); y += 6; P.texto(ML, y + 10, t.toUpperCase(), {tam:9, negrito:true, cor:VERDE}); P.linha(ML, y + 15, MR, y + 15, VERDE, 0.9); y += 22; };
+  const paragrafo = (t, o) => {
+    o = o || {}; const tam = o.tam || 9.5, lh = tam * 1.38;
+    P.quebrar(t || "—", LARG - (o.rec || 0), tam, o.negrito).forEach(l => { quebra(lh); P.texto(ML + (o.rec || 0), y + tam, l, {tam, negrito:o.negrito, cor:o.cor || TINTA}); y += lh; });
+  };
+  const tabela = (cols, linhas, o) => {
+    o = o || {}; const tam = o.tam || 8.5, lh = tam + 7;
+    const tot = cols.reduce((s, k) => s + k.w, 0), esc = LARG / tot, xs = []; let xx = ML;
+    cols.forEach(k => { xs.push(xx); xx += k.w * esc; });
+    const cab = () => {
+      P.ret(ML, y, LARG, lh, {preench:CLARO});
+      cols.forEach((k, j) => { const w = k.w * esc; P.texto(k.al === "esq" ? xs[j] + 4 : xs[j] + w / 2, y + lh - 5, k.t, {tam:tam - 0.5, negrito:true, cor:TINTA2, alinh:k.al === "esq" ? "esq" : "centro"}); });
+      y += lh;
+    };
+    quebra(lh * 2); cab();
+    linhas.forEach((ln, li) => {
+      if (quebra(lh)) cab();
+      if (ln.destaque) P.ret(ML, y, LARG, lh, {preench:"#FFF4E0"});
+      ln.v.forEach((v, j) => { const k = cols[j], w = k.w * esc; let t = String(v == null ? "" : v);
+        while (t.length > 1 && P.larg(t, tam, ln.negrito) > w - 6) t = t.slice(0, -1);
+        P.texto(k.al === "esq" ? xs[j] + 4 : xs[j] + w / 2, y + lh - 5, t, {tam, negrito:ln.negrito || (k.forte && v), cor:(ln.cores && ln.cores[j]) || TINTA, alinh:k.al === "esq" ? "esq" : "centro"}); });
+      P.linha(ML, y + lh, MR, y + lh, LINHA, 0.4);
+      y += lh;
+    });
+    y += 6;
+  };
+  const kv = pares => {          /* duas colunas de "rótulo: valor" */
+    const col = LARG / 2, tam = 9, lh = 14;
+    for (let k = 0; k < pares.length; k += 2) {
+      quebra(lh);
+      [pares[k], pares[k + 1]].forEach((p, j) => { if (!p) return; const x = ML + j * col;
+        const w = P.texto(x, y + tam, p[0] + ": ", {tam, negrito:true, cor:TINTA2});
+        const bruto = typeof p[1] === "number" ? fmtNum(p[1], Number.isInteger(p[1]) ? 0 : 2) : String(p[1] == null ? "" : p[1]).trim();
+        let v = bruto === "" ? "—" : bruto; while (v.length > 1 && P.larg(v, tam) > col - w - 8) v = v.slice(0, -1);
+        P.texto(x + w, y + tam, v, {tam, cor:TINTA}); });
+      y += lh;
+    }
+    y += 4;
+  };
+  cabecalho(true);
+  titulo("Identificação");
+  kv([["Contrato", c.codigo], ["Gleba", c.gleba], ["Safra", c.safra], ["Pivô", c.pivo], ["Híbrido", c.hibrido], ["Fazenda", c.fazenda],
+      ["Município", [c.municipio, c.estado].map(x => String(x || "").trim()).filter(Boolean).join("/")], ["Área (ha)", c.area === "" || c.area == null ? "" : num(c.area)], ["Proporção", c.proporcao], ["Representante", i.representante || c.rc],
+      ["AT", i.at], ["Situação", i.situacao], ["Isolamento", i.isolamento], ["Clima", [i.tempo, i.temperatura, i.ventos ? "ventos " + String(i.ventos).toLowerCase() : ""].filter(Boolean).join(", ")]]);
+  titulo("Índices");
+  const tiles = [["F.F.P", pct(m.ffp, 3)], ["E.R.", pct(m.er, 1)], ["P.T.", pct(m.pt, 2)], ["Atípicas pol.", pct(m.atip, 3)]]
+    .concat(MACHOS.filter(k => m.pct[k] != null).map((k, j) => ["M.P." + (j + 1), pct(m.pct[k], 1)]))
+    .concat([["Nota desp.", m.notaDesp || "—"], ["Nota atíp.", m.notaAtip || "—"], ["Pontos", m.n + "/" + m.previstos]]);
+  const porLinha = 5, tw = (LARG - (porLinha - 1) * 6) / porLinha;
+  for (let k = 0; k < tiles.length; k += porLinha) {
+    quebra(40);
+    tiles.slice(k, k + porLinha).forEach((t, j) => { const x = ML + j * (tw + 6);
+      P.ret(x, y, tw, 34, {preench:CLARO}); P.texto(x + 7, y + 11, t[0], {tam:7.5, negrito:true, cor:TINTA2}); P.texto(x + 7, y + 27, String(t[1]), {tam:12.5, negrito:true, cor:TINTA}); });
+    y += 40;
+  }
+  paragrafo((cl.motivo ? cl.motivo + ". " : "") + "Fase: " + ctx.fase.texto + (ctx.fase.detalhe ? " (" + ctx.fase.detalhe + ")" : "") + ".", {tam:8.5, cor:TINTA2});
+  titulo("Médias da contagem");
+  const med = [];
+  const lin = (k, rot, desc, forte) => med.push({negrito:!!forte, v:[rot, desc, k === "FFP" ? CH_P.reduce((s, x) => s + (m.soma[x] || 0), 0) : (m.soma[k] == null ? "—" : m.soma[k]), (m.get(k) == null ? "—" : fmtNum(m.get(k), k === "FFP" || ATIP_POL.indexOf(k) >= 0 ? 3 : 2) + "%")]});
+  lin("FFP", "F.F.P", NOME.FFP, true); lin("PT", "P.T.", NOME.PT); lin("ER", "E.R.", NOME.ER);
+  MACHOS.forEach(k => { if (m.pct[k] != null) lin(k, SIGLA[k], NOME[k]); });
+  CH_BASE.forEach(k => { if (m.soma[k]) lin(k, SIGLA[k], NOME[k]); });
+  CH_ATIP.forEach(k => { if (m.soma[k]) lin(k, SIGLA[k], NOME[k]); });
+  med.push({negrito:true, v:["Base", "plantas avaliadas", m.base, m.n + " pontos"]});
+  tabela([{t:"Sigla", w:12, al:"esq"}, {t:"Descrição", w:50, al:"esq"}, {t:"Soma", w:12}, {t:"%", w:14}], med);
+  titulo("Ponto a ponto");
+  const ppp = pppDo(c), nm = Math.max(1, Math.min(3, num(c.machos, 2) || 2));
+  const colsP = CH_BASE.filter(k => i.pontos.some(p => num(p.c[k]))).concat(["ER"], MACHOS.slice(0, nm), CH_ATIP.filter(k => i.pontos.some(p => num(p.c[k]))));
+  const linhasP = i.pontos.map(p => pontoFeito(p)
+    ? {v:[p.i, plantasDoPonto(p, ppp), ptDoPonto(p, ppp)].concat(colsP.map(k => num(p.c[k]) || "·")).concat([p.gps ? "±" + Math.round(p.gps.acc || 0) + " m" : "—"]),
+       cores:[null, null, null].concat(colsP.map(k => num(p.c[k]) && (CH_P.indexOf(k) >= 0 || ATIP_POL.indexOf(k) >= 0) ? "#B42318" : null))}
+    : {v:[p.i, "não contado"]});
+  tabela([{t:"Pt", w:5}, {t:"Aval.", w:7}, {t:"P.T.", w:7}].concat(colsP.map(k => ({t:SIGLA[k] || k, w:7}))).concat([{t:"GPS", w:9}]), linhasP, {tam:colsP.length > 9 ? 7 : 8});
+  titulo("Caminhamento");
+  const fora = Object.keys(m.fora).filter(k => num(m.fora[k]));
+  paragrafo(fora.length ? "Encontrados no caminhamento: " + fora.map(k => (SIGLA[k] || k) + " " + m.fora[k]).join(" · ") + "." : "Sem ocorrências.");
+  const pf = i.pontoFixo || {}, Lpf = pfLinhas(i), nrep = pfReps(i);
+  if (Lpf.some(([k]) => pfTemDado(pf[k]))) {
+    titulo("Ponto fixo");
+    const reps = []; for (let j = 0; j < nrep; j++) if (Lpf.some(([k]) => pf[k] && pf[k][j] != null && pf[k][j] !== "")) reps.push(j);
+    tabela([{t:"Linha", w:16, al:"esq"}].concat(reps.map(j => ({t:"Rep. " + (j + 1), w:9}))).concat([{t:"Média", w:10}]),
+      Lpf.map(([k, rot, tipo]) => ({negrito:false, v:[rot].concat(reps.map(j => pf[k] && pf[k][j] != null && pf[k][j] !== "" ? fmtNum(num(pf[k][j]), Number.isInteger(num(pf[k][j])) ? 0 : 1) : "—")).concat([pfMedia(pf[k]) == null ? "—" : fmtNum(pfMedia(pf[k]), 1)]),
+        cores:[tipo === "f" ? VERDE : null]})));
+    const r = pfResumo(i); if (r !== "não usado") paragrafo("Médias de todas as leituras: " + r + ".", {tam:8.5, cor:TINTA2});
+    if (pf.obs) paragrafo(pf.obs, {tam:9});
+  }
+  titulo("Observações"); paragrafo(String(ctx.obsTexto || "—").replace(/\n\s*\n/g, "\n"));
+  titulo("Recomendação"); paragrafo(ctx.recTexto || "—");
+  if (i.proxima) paragrafo("Próxima inspeção: " + dataBR(i.proxima), {negrito:true});
+  /* mapa do campo (sem o fundo de satélite, que não entra numa imagem) */
+  try {
+    const d = dadosDoMapa(i, c), svg = mapaSVG(Object.assign({}, d, {eu:null}));
+    if (svg) {
+      const cores = varsDoTemaClaro();
+      const limpo = svg.replace(/<image[^>]*>/g, "").replace(/var\((--[\w-]+)\)/g, (x, v) => /^--f-/.test(v) ? "Helvetica, Arial, sans-serif" : String(cores[v] || "#8A96A3").replace(/"/g, "'"));
+      const u8 = await pdfParaJpeg(svgURL(limpo), 900, 0.88), im = u8 && P.jpeg(u8);
+      if (im) { const w = Math.min(LARG, 300), h = w * im.h / im.w; quebra(h + 46); titulo("Mapa dos pontos"); P.imagem(im, ML, y, w, h); P.ret(ML, y, w, h, {borda:LINHA}); y += h + 8; }
+    }
+  } catch (e) {}
+  /* fotos: as marcadas "Relatório"; se nenhuma estiver marcada, todas */
+  let fotos = (i.fotos || []).filter(f => f.relatorio);
+  if (!fotos.length) fotos = (i.fotos || []).slice();
+  if (fotos.length) {
+    const fw = (LARG - 12) / 2, fh = 190;
+    quebra(fh + 34 + 30);
+    titulo("Fotos (" + fotos.length + ")");
+    let col = 0;
+    for (const f of fotos) {
+      const r = await fotoGet(f.id); if (!r || !r.blob) continue;
+      let u8 = new Uint8Array(await r.blob.arrayBuffer());
+      if (!pdfJpegInfo(u8)) u8 = await pdfParaJpeg(r.blob, 1400, 0.85);
+      const im = u8 && P.jpeg(u8); if (!im) continue;
+      if (col === 0) quebra(fh + 34);
+      const x = ML + col * (fw + 12), esc = Math.min(fw / im.w, fh / im.h), w = im.w * esc, h = im.h * esc;
+      P.ret(x, y, fw, fh, {preench:CLARO});
+      P.imagem(im, x + (fw - w) / 2, y + (fh - h) / 2, w, h);
+      const leg = [f.ponto ? "Ponto " + f.ponto : "", f.t ? new Date(f.t).toLocaleString("pt-BR", {dateStyle:"short", timeStyle:"short"}) : "",
+                   f.lat != null ? f.lat.toFixed(5) + ", " + f.lon.toFixed(5) + (f.acc != null ? " ±" + f.acc + " m" : "") : "sem GPS"].filter(Boolean).join(" · ");
+      P.texto(x, y + fh + 10, leg, {tam:7.5, cor:TINTA2});
+      if (f.legenda) { let t = String(f.legenda); while (t.length > 1 && P.larg(t, 8.5) > fw) t = t.slice(0, -1); P.texto(x, y + fh + 21, t, {tam:8.5, cor:TINTA}); }
+      col = 1 - col; if (col === 0) y += fh + 30;
+    }
+    if (col === 1) y += fh + 30;
+  }
+  /* assinaturas */
+  quebra(70); y += 30;
+  [[i.representante || c.rc || "", "Representante de campo"], [i.at || "", "Assistente técnico"]].forEach(([n, papel], j) => {
+    const x = ML + j * (LARG / 2) + 10, w = LARG / 2 - 20;
+    P.linha(x, y, x + w, y, TINTA2, 0.6); P.texto(x + w / 2, y + 12, n || " ", {tam:9, negrito:true, alinh:"centro"}); P.texto(x + w / 2, y + 23, papel, {tam:8, cor:TINTA2, alinh:"centro"});
+  });
+  /* rodapé de todas as páginas */
+  const quando = new Date().toLocaleString("pt-BR", {dateStyle:"short", timeStyle:"short"}), n = P.paginas.length;
+  P.paginas.forEach((pg, k) => {
+    P.pg = pg;
+    P.linha(ML, P.H - 40, MR, P.H - 40, LINHA, 0.5);
+    if (orshu) P.imagem(orshu, ML, P.H - 35, 44, 44 * orshu.h / orshu.w);
+    P.texto(ML + 50, P.H - 25, ROTULO_APP + " · gerado em " + quando + (DB.usuario ? " · " + (DB.usuario.nome || DB.usuario.codigo) : ""), {tam:7.5, cor:TINTA2});
+    P.texto(ML + 50, P.H - 16, "Vana é um programa da Orshu. © " + new Date().getFullYear() + " Orshu. Todos os direitos reservados.", {tam:7, cor:TINTA2});
+    P.texto(MR, P.H - 25, "Página " + (k + 1) + " de " + n, {tam:7.5, cor:TINTA2, alinh:"dir"});
+  });
+  const nome = (TESTE ? "TESTE_" : "") + "Inspecao_" + (c.codigo || "campo").replace(/[^\w-]+/g, "") + (c.gleba ? "_" + String(c.gleba).replace(/[^\w-]+/g, "") : "") + "_n" + i.numero + "_" + i.data + ".pdf";
+  return {nome, dados:P.gerar("Inspeção nº " + i.numero + " · " + nomeCampo(c)), fotos:fotos.length};
+}
+function varsDoTemaClaro(){
+  /* cores do tema claro (o primeiro :root da folha de estilo), para o mapa do PDF */
+  const out = {};
+  const css = Array.from(document.querySelectorAll("style")).map(x => x.textContent).join("\n");
+  const m = Array.from(css.matchAll(/:root\s*\{([^}]*)\}/g)).find(x => x[1].indexOf("--sup3") >= 0);
+  if (m) m[1].replace(/(--[\w-]+)\s*:\s*([^;]+);/g, (x, k, v) => { out[k] = v.trim(); return x; });
+  return out;
+}
+function corTextoPdf(hex){ const h = String(hex || "#888888").replace("#", ""); const r = parseInt(h.substr(0, 2), 16), g = parseInt(h.substr(2, 2), 16), b = parseInt(h.substr(4, 2), 16); return (r * 0.299 + g * 0.587 + b * 0.114) > 150 ? "#1B2733" : "#FFFFFF"; }
+async function entregarBinario(nome, u8, mime, modo){
+  const blob = new Blob([u8], {type:mime});
+  if (modo !== "salvar") {
+    try {
+      const f = new File([blob], nome, {type:mime});
+      if (navigator.canShare && navigator.canShare({files:[f]}) && navigator.share) { await navigator.share({files:[f], title:nome}); return "compartilhado"; }
+    } catch (e) { if (e && e.name === "AbortError") return "cancelado"; }
+  }
+  try {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = nome; a.rel = "noopener";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 15000);
+    return "baixado";
+  } catch (e) { return "erro"; }
+}
+async function pdfComFotos(modo){
+  const i = inspPor(S.inspId); if (!i) return;
+  aviso("Montando o PDF…", null, 1500);
+  try {
+    const r = await relatorioPdf(i);
+    const res = await entregarBinario(r.nome, r.dados, "application/pdf", modo);
+    if (res === "baixado") aviso("PDF salvo: " + r.nome + (r.fotos ? " (" + r.fotos + " foto" + (r.fotos > 1 ? "s" : "") + ")" : ""), null, 5000);
+    else if (res === "erro") aviso("Não deu para salvar o PDF neste aparelho.", null, 5000);
+  } catch (e) { aviso("Não deu para montar o PDF: " + (e && e.message ? e.message : e), null, 6000); }
 }
 
 /* acoes.js */
@@ -3697,7 +4092,20 @@ function aoMudarBind(el, fim){
   if (path === "campo.gleba") { a.raiz.gleba = fim ? normGleba(a.raiz.gleba) : String(a.raiz.gleba).toUpperCase().trim(); if (fim) el.value = a.raiz.gleba; }
   if (path === "insp.numero" && fim) {
     const ck = checarNumeroInsp(a.raiz, a.raiz.numero);
+    const n = a.raiz.numero;
     if (ck.erro) { a.raiz.numero = a.raiz._numOk || ck.prox; el.value = a.raiz.numero; aviso(ck.erro, null, 6000); }
+    else if (ck.falta.length && num(a.raiz._numOk) !== num(n)) {
+      /* faltam as anteriores neste celular: pergunta antes de aceitar o número */
+      const insp = a.raiz;
+      insp.numero = insp._numOk || ck.prox; el.value = insp.numero;
+      confirmar("Inspeção nº " + n, textoFalta(ck.falta) + " fora da Caderneta " +
+        "(papel, outro celular, PC)? Se sim, esta fica como nº " + n + ".", "Usar nº " + n).then(ok => {
+        if (!ok) return;
+        insp.numero = n; insp._numOk = n;
+        tocar(insp); salvar(); render();
+        aviso("Inspeção nº " + n);
+      });
+    }
     else a.raiz._numOk = a.raiz.numero;
   }
   if (a.tipo === "insp" || a.tipo === "ponto") tocar(inspPor(S.inspId));
@@ -3802,6 +4210,16 @@ document.addEventListener("focusout", e => {
 });
 document.addEventListener("keydown", e => {
   const el = e.target;
+  if (e.key === "Enter" && el.dataset && el.dataset.pf) {      /* ponto fixo: desce na repetição */
+    e.preventDefault();
+    const todos = Array.from(document.querySelectorAll("#tela input[data-pf]"));
+    const nl = Math.max.apply(null, todos.map(x => +x.dataset.li)) + 1;
+    let li = +el.dataset.li + 1, j = +el.dataset.j;
+    if (li >= nl) { li = 0; j += 1; }
+    const alvo = todos.find(x => +x.dataset.li === li && +x.dataset.j === j);
+    if (alvo) alvo.focus(); else el.blur();
+    return;
+  }
   if (e.key === "Enter" && el.classList && (el.classList.contains("ct-n") || el.id === "pt-aval")) {
     e.preventDefault();
     const todos = Array.from(document.querySelectorAll("#tela input.ct-n, #tela #pt-aval")).filter(x => x.offsetParent !== null);
@@ -3818,13 +4236,12 @@ function mudarPontoFixo(el){
   const i = inspPor(S.inspId); if (!i) return;
   const k = el.dataset.pf, j = +el.dataset.j;
   const limpo = el.value.replace(/[^\d.,]/g, "").slice(0, 6); if (limpo !== el.value) el.value = limpo;
-  const arr = i.pontoFixo[k] || (i.pontoFixo[k] = []);
+  const arr = Array.isArray(i.pontoFixo[k]) ? i.pontoFixo[k] : (i.pontoFixo[k] = []);
   arr[j] = limpo === "" ? null : num(limpo);
   tocar(i); salvar();
-  const med = pfMedia(arr), tot = arr.reduce((s, x) => s + num(x), 0);
-  const t = document.getElementById("pf-t-" + k), m = document.getElementById("pf-m-" + k);
-  if (t) t.textContent = med == null ? "—" : fmtNum(tot, 0);
+  const med = pfMedia(arr), m = document.getElementById("pf-m-" + k), r = document.getElementById("pf-resumo");
   if (m) m.textContent = med == null ? "—" : fmtNum(med, 1);
+  if (r) { const t = pfResumo(i); r.textContent = t === "não usado" ? "" : "Médias: " + t; }
 }
 
 /* ---------------------------------------------------------------- cliques */
@@ -3857,6 +4274,12 @@ async function acao(a, b, id){
       return ir(para);
     }
     case "voltar": return voltarPara(b.dataset.para);
+    case "pf-rep": {
+      if (!i) return;
+      i.pontoFixo.reps = Math.min(8, pfReps(i) + 1); tocar(i); salvar(); render();
+      const alvo = document.querySelector('#tela input[data-pf][data-li="0"][data-j="' + (i.pontoFixo.reps - 1) + '"]'); if (alvo) alvo.focus();
+      return;
+    }
     case "novo-campo": {
       const c = novoCampo(); DB.campos.push(c); salvar();
       ABERTOS.add("sec-dados-campo");
@@ -3956,6 +4379,7 @@ async function acao(a, b, id){
     case "copiar-msg": { if (i) copiarTexto(mensagemWhatsapp(contexto(i)), "Mensagem"); return; }
     case "compartilhar-msg": { if (i && navigator.share) navigator.share({text:mensagemWhatsapp(contexto(i))}).catch(() => {}); return; }
     case "pdf": return imprimir();
+    case "pdf-arquivo": return pdfComFotos(b.dataset.m);
     case "enviar": return enviarAoPC(b.dataset.m);
     case "copia": return salvarCopia();
     case "foto": { const al = alvoFotos(); if (!al) return; return tirarFoto(al, b.dataset.k === "" || b.dataset.k == null ? null : +b.dataset.k); }
@@ -4085,9 +4509,21 @@ function concluirPonto(){
 }
 
 /* ---------------------------------------------------------------- PDF */
-function imprimir(){
+async function fotosDaImpressao(el){
+  /* espera as fotos carregarem antes de abrir a impressão (senão saem em branco) */
+  await Promise.all([...el.querySelectorAll("img[data-foto]")].map(async im => {
+    const id = im.dataset.foto;
+    if (!URLS_FOTO[id]) { const r = await fotoGet(id); if (r && r.blob) URLS_FOTO[id] = URL.createObjectURL(r.blob); }
+    if (!URLS_FOTO[id]) { const fig = im.closest("figure"); if (fig) fig.remove(); return; }
+    im.src = URLS_FOTO[id];
+    try { await im.decode(); } catch (e) {}
+  }));
+}
+async function imprimir(){
   const i = inspPor(S.inspId); if (!i) return;
-  document.getElementById("imprimir").innerHTML = htmlImpressao(contexto(i));
+  const el = document.getElementById("imprimir");
+  el.innerHTML = htmlImpressao(contexto(i));
+  await fotosDaImpressao(el);
   setTimeout(() => { try { window.print(); } catch (e) { aviso("Use o menu do navegador › Imprimir"); } }, 120);
 }
 window.addEventListener("beforeprint", () => { const i = inspPor(S.inspId); const el = document.getElementById("imprimir"); if (i && el && !el.innerHTML) el.innerHTML = htmlImpressao(contexto(i)); });
@@ -4285,8 +4721,16 @@ function checarNumeroInsp(i, n){
   const ns = numerosFeitos(i.campoId, i.id), prox = ns.size ? Math.max.apply(null, Array.from(ns)) + 1 : 1;
   if (n < 1) return {erro:"O número começa em 1.", prox};
   if (ns.has(n)) return {erro:"Este campo já tem a inspeção nº " + n + ".", prox};
-  for (let k = 1; k < n; k++) if (!ns.has(k)) return {erro:"A nº " + n + " só pode existir depois da nº " + k + ". A próxima deste campo é a nº " + prox + ".", prox};
-  return {erro:"", prox};
+  /* v2.5: as anteriores podem ter sido feitas fora da Caderneta (papel, outro celular, PC, campo
+     criado aqui): a nº 4 sem a 1, 2 e 3 é aceita depois de confirmar */
+  const falta = [];
+  for (let k = 1; k < n; k++) if (!ns.has(k)) falta.push(k);
+  return {erro:"", prox, falta};
+}
+function textoFalta(falta){
+  if (falta.length === 1) return "A inspeção nº " + falta[0] + " deste campo não está neste celular. Foi feita";
+  const seguidas = falta[falta.length - 1] - falta[0] === falta.length - 1;
+  return "As inspeções nº " + (seguidas ? falta[0] + " a " + falta[falta.length - 1] : falta.join(", ")) + " deste campo não estão neste celular. Foram feitas";
 }
 
 /* ---------------------------------------------------------------- colheita (v2.4) — porte de cronograma/colheita.py */
@@ -4623,7 +5067,7 @@ async function lerQrWifi(){
   const v = await fim; parar = true;
   fluxo.getTracks().forEach(t => t.stop());
   const e = lerEnderecoWifi(v || achou);
-  if (!e) { if (v || achou) aviso("Esse QR não é o do Cronograma de Campo"); return; }
+  if (!e) { if (v || achou) aviso("Esse QR não é o do Vana do computador"); return; }
   WIFI.base = e.base; WIFI.senha = e.senha; DB.cfg.wifiEnd = e.base; salvar(); render();
   if (e.senha) await trocarWifi();
 }
