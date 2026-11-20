@@ -1495,6 +1495,25 @@ function montarPacote(conteudo, tipo){
   p.conteudo = txt;
   return p;
 }
+/* v2.5: esta Caderneta passa a usar o usuário do PC (a mesma pessoa): o que era do usuário
+   antigo (dono e autor) passa para o novo. */
+function adotarUsuario(up) {
+  const velho = DB.usuario ? DB.usuario.codigo : "";
+  const trocar = o => {
+    if (!o) return;
+    let mudou = false;
+    if (o.dono === velho) { o.dono = up.codigo; mudou = true; }
+    if (o.autor === velho) { o.autor = up.codigo; mudou = true; }
+    if (mudou && "enviadoEm" in o) o.enviadoEm = 0;           /* vão de novo para o PC, já com o usuário certo */
+  };
+  ["campos", "inspecoes", "eventos", "colheitas", "registros"].forEach(k => {
+    const v = DB[k]; (Array.isArray(v) ? v : Object.values(v || {})).forEach(trocar);
+  });
+  DB.usuario = {codigo:up.codigo, nome:up.nome || up.codigo};
+  salvar();
+  return "Caderneta agora usa o usuário " + (up.nome || up.codigo) + " (" + up.codigo + ")" + (velho ? "; o que era de " + velho + " passou para ele." : ".");
+}
+
 function abrirPacote(d){
   if (!(num(d.versao) <= 1)) return {erro:"Esse arquivo foi feito por uma versão mais nova. Atualize a Caderneta."};
   if (d.teste && !TESTE) return {erro:"Esse arquivo é do ambiente de TESTE e não pode ser aberto aqui"};
@@ -4568,11 +4587,12 @@ async function processarRecebido(d, nomeArq, silencioso){
     let outro = false, extra = "";
     if (up && DB.usuario && DB.usuario.codigo !== up.codigo) {      /* campos de outro inspetor */
       const ok = await dialogo({titulo:"Campos de outro inspetor",
-        texto:"Este arquivo é de " + (up.nome || up.codigo) + " (" + up.codigo + "). Esta Caderneta é de " + (DB.usuario.nome || DB.usuario.codigo) +
-              ". Receber os campos dele para fazer inspeções para ele?",
-        botoes:[{rotulo:"Cancelar", valor:null}, {rotulo:"Receber", valor:true, classe:"pri"}]});
+        texto:"Este arquivo é de " + (up.nome || up.codigo) + " (" + up.codigo + "). Esta Caderneta é de " + (DB.usuario.nome || DB.usuario.codigo) + " (" + DB.usuario.codigo + ")" +
+              ". Receber os campos dele para fazer inspeções para ele?\n\nSe o computador é seu (a mesma pessoa), use o usuário dele nesta Caderneta: o que já está aqui passa para " + up.codigo + " e as trocas não pedem mais permissão.",
+        botoes:[{rotulo:"Cancelar", valor:null}, {rotulo:"Receber para ele", valor:"outro"}, {rotulo:"O PC é meu: usar " + up.codigo, valor:"adotar", classe:"pri"}]});
       if (!ok) return;
-      outro = true;
+      if (ok === "adotar") { await fazerCopia("antes de trocar o usuário"); extra += " " + adotarUsuario(up); }
+      else outro = true;
     }
     await fazerCopia("antes de receber campos do PC");
     if (up && !DB.usuario) { DB.usuario = up; extra += " Caderneta pareada com " + (up.nome || up.codigo) + " (" + up.codigo + ")."; }
