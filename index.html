@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-6T4Pc7D/rgBpG1fuDvz1SF8gbSnNLX4bCshH0BJTBQg='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src 'self' http: https://server.arcgisonline.com; font-src 'self'; worker-src 'self'; manifest-src 'self'; media-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-CcnYeomdIFVurUPHsl45lroJQFfdX4KnA7fdvvndeXM='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src 'self' http: https://server.arcgisonline.com; font-src 'self'; worker-src 'self'; manifest-src 'self'; media-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#FFFFFF">
 <meta name="mobile-web-app-capable" content="yes">
@@ -119,10 +119,11 @@ a{color:var(--azul)}
 @keyframes pisca{50%{opacity:.25}}
 main{flex:1;width:100%;max-width:720px;margin:0 auto;padding:14px 16px calc(98px + env(safe-area-inset-bottom,0px))}
 .abas{position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--sup);border-top:1px solid var(--linha);
-  display:grid;grid-template-columns:repeat(6,minmax(0,1fr));padding:5px 6px calc(5px + env(safe-area-inset-bottom,0px))}
+  display:grid;grid-template-columns:repeat(7,minmax(0,1fr));padding:5px 4px calc(5px + env(safe-area-inset-bottom,0px))}
 .abas button{position:relative;background:none;border:0;border-radius:12px;padding:6px 1px 5px;cursor:pointer;color:var(--tinta3);
   display:flex;flex-direction:column;align-items:center;gap:2px;font-family:var(--f-titulo);font-weight:600;
-  font-size:12px;letter-spacing:.03em}
+  font-size:11.5px;letter-spacing:0}
+@media (max-width:380px){.abas button{font-size:10.5px}.abas button .ico{width:21px;height:21px}}
 .abas button .ico{width:22px;height:22px}
 .abas button[aria-current="page"]{color:var(--azul);background:var(--azul-suave)}
 .abas .bolinha{position:absolute;top:1px;left:calc(50% + 5px);min-width:16px;height:16px;border-radius:8px;background:var(--r3f);
@@ -145,6 +146,11 @@ main{flex:1;width:100%;max-width:720px;margin:0 auto;padding:14px 16px calc(98px
 .vazio{text-align:center;padding:30px 18px;color:var(--tinta2)}
 .vazio h3{font-size:19px;margin-bottom:6px;color:var(--tinta)}
 .mono{font-family:var(--f-mono)}
+button.link{background:none;border:0;padding:0;font:inherit;color:var(--azul);text-decoration:underline;cursor:pointer}
+.tag-atual{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:6px;background:var(--azul-suave);color:var(--azul);font-family:var(--f-texto);font-size:12px;font-weight:700;vertical-align:2px}
+.chaves .item{display:block;cursor:default}
+.chaves .item .dir.btns{display:flex;flex-direction:row;justify-content:flex-start;align-items:center;gap:8px;margin-top:9px;text-align:left}
+.chaves .item .dir.btns .btn{min-height:38px}
 .num{font-variant-numeric:tabular-nums}
 .mut{color:var(--tinta3)}
 .peq{font-size:12.5px}
@@ -1086,7 +1092,8 @@ const CFG_PADRAO = {
   representante:"", at:"", jaleco:"",
   gpsLigado:true, gpsTrilha:true, gpsPrecisao:30,
   msgDecimal:".", msgMaiusculas:true, msgRecomendacao:"risco", msgProxima:false,
-  ultimoEnvio:0, ultimaCopiaArq:0
+  ultimoEnvio:0, ultimaCopiaArq:0,
+  nomeAparelho:"", pinMin:15
 };
 
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
@@ -1306,7 +1313,7 @@ async function pinMigrar(cifrar){
   }
 }
 async function pinLigar(){
-  const p1 = await pedirNumero("Criar o PIN", "4 a 8 números. Ele será pedido ao abrir o app e depois de " + PIN_MIN + " minutos fora." +
+  const p1 = await pedirNumero("Criar o PIN", "4 a 8 números. Ele será pedido ao abrir o app e depois de " + pinMin() + " minutos fora (dá para mudar em Ajustes)." +
     (chaveAtualU8() ? " Se esquecer, a chave do PC destrava." : " ATENÇÃO: esta Caderneta ainda não tem a chave do PC — se esquecer o PIN, só uma cópia enviada ao PC recupera os dados. Pareie antes, se puder."));
   if (!p1) return;
   const p2 = await pedirNumero("Repita o PIN", "Digite o mesmo PIN de novo.");
@@ -1349,7 +1356,7 @@ function telaPin(primeira){
     const v = document.createElement("div");
     v.id = "trava-pin";
     v.innerHTML = '<form class="tp-caixa" autocomplete="off"><div class="tp-marca">' + (typeof ICONES !== "undefined" ? "" : "") + '<b>Vana Caderneta</b></div>' +
-      '<p>' + (primeira ? "Digite o PIN para abrir os dados." : "Ficou mais de " + PIN_MIN + " minutos fora. Digite o PIN.") + '</p>' +
+      '<p>' + (primeira ? "Digite o PIN para abrir os dados." : "Ficou mais de " + pinMin() + (pinMin() === 1 ? " minuto" : " minutos") + " fora. Digite o PIN.") + '</p>' +
       '<input type="password" inputmode="numeric" maxlength="8" name="pin" aria-label="PIN" required>' +
       '<p class="tp-erro" hidden></p><button class="btn pri grande largo" type="submit">Entrar</button>' +
       '<button class="btn largo" type="button" data-esqueci>Esqueci o PIN (usar a chave do PC)</button></form>';
@@ -1380,17 +1387,31 @@ function telaPin(primeira){
 document.addEventListener("visibilitychange", () => {
   if (!PIN.meta) return;
   if (document.visibilityState === "hidden") PIN.escondido = Date.now();
-  else if (PIN.escondido && Date.now() - PIN.escondido > PIN_MIN * 60000 && !document.getElementById("trava-pin")) {
+  else if (PIN.escondido && Date.now() - PIN.escondido > pinMin() * 60000 && !document.getElementById("trava-pin")) {
     PIN.escondido = 0;
     telaPin(false);                  /* a chave fica na memória; a tela só destrava com o PIN */
   }
 });
 
 function chaveAtualU8(){ return (DB.chaveAtual && DB.chaves && DB.chaves[DB.chaveAtual]) ? b32Dec(DB.chaves[DB.chaveAtual]) : null; }
-async function parearChave(texto){
+async function parearChave(texto, sem){
   const u8 = b32Dec(texto); if (!u8) return null;
   const kid = await kidDe(u8);
-  DB.chaves = DB.chaves || {}; DB.chaves[kid] = b32Enc(u8); DB.chaveAtual = kid; salvar();
+  DB.chaves = DB.chaves || {};
+  const antes = DB.chaveAtual && DB.chaves[DB.chaveAtual] ? DB.chaveAtual : "";
+  DB.chaves[kid] = b32Enc(u8);
+  /* v2.5: a Caderneta já usava a chave de OUTRO computador (outra instalação, pasta de teste…):
+     pergunta antes de trocar — senão os próximos arquivos só abrem no computador novo */
+  let usar = true;
+  if (antes && antes !== kid && !sem) {
+    const v = await dialogo({titulo:"Chave de outro computador",
+      texto:"Esta Caderneta manda os arquivos com a chave " + antes.slice(0, 4).toUpperCase() + ". A chave lida agora é a " + kid.slice(0, 4).toUpperCase() +
+            ", de outro computador (ou de outra instalação do Vana).\n\nPassar a usar a nova? Se não, ela fica guardada só para abrir os arquivos daquele computador.",
+      botoes:[{rotulo:"Só guardar", valor:"guardar"}, {rotulo:"Usar a " + kid.slice(0, 4).toUpperCase(), valor:"usar", classe:"pri"}]});
+    usar = v === "usar";
+  }
+  if (usar) DB.chaveAtual = kid;
+  salvar();
   if (PIN.meta && PIN.raw) pinMetaGravar(await _embrulharPC(Object.assign({}, PIN.meta)));   /* v2.5: esqueci o PIN -> chave do PC */
   return kid;
 }
@@ -1418,7 +1439,7 @@ async function pedirChave(motivo, modo){
   const m = String(txt).match(/[#&]k=([A-Za-z2-7]{52})/);
   const kid = await parearChave(m ? m[1] : txt);
   if (!kid) { aviso("Isso não é uma chave de proteção do Vana", null, 5000); return null; }
-  render(); aviso("Chave " + kid.slice(0, 4).toUpperCase() + " guardada: os arquivos agora saem protegidos", null, 5000);
+  render(); aviso("Chave " + kid.slice(0, 4).toUpperCase() + (DB.chaveAtual === kid ? " guardada: os arquivos agora saem protegidos com ela" : " guardada (só para abrir arquivos)"), null, 5000);
   return kid;
 }
 async function abrirProtegido(env){
@@ -1844,9 +1865,13 @@ function aplicarRecibo(lista, deQuem){
   });
   return n;
 }
-function nomeAparelho(){
+function nomeAparelhoPadrao(){
   const ua = (typeof navigator !== "undefined" && navigator.userAgent) || "";
   return (/iPhone|iPad/.test(ua) ? "iPhone" : /Android/.test(ua) ? "Android" : "Celular") + " " + DB.aparelho.slice(-4);
+}
+function nomeAparelho(){
+  const n = String((DB.cfg && DB.cfg.nomeAparelho) || "").replace(/[:\n\r]/g, " ").trim().slice(0, 40);   /* v2.5: escolhido em Ajustes */
+  return n || nomeAparelhoPadrao();
 }
 /* Pacote de troca (arquivo "….vana.json"), igual ao do programa do PC (cronograma/pacote.py):
    o conteúdo vai como TEXTO, com a impressão digital (SHA-256) desse texto ao lado. Quem recebe
@@ -1915,7 +1940,7 @@ async function salvarCopia(){
   if (r === "cancelado") { aviso("Cópia cancelada"); return; }
   DB.cfg.ultimaCopiaArq = Date.now(); salvar(); render();
   aviso(({baixado:"Cópia salva em Downloads", compartilhado:"Cópia compartilhada", salvo:"Cópia salva", copiado:"Conteúdo copiado"}[r] || "Cópia gerada") +
-        (protegida ? " (protegida)" : " — SEM proteção: pareie com o PC em Dados › Proteção dos arquivos"), null, protegida ? 2600 : 7000);
+        (protegida ? " (protegida)" : " — SEM proteção: pareie com o PC em Ajustes › Proteção dos arquivos"), null, protegida ? 2600 : 7000);
 }
 /* v2.5: lembrete semanal — 7 dias sem cópia de segurança fora do app: aviso fixo na lista de campos */
 /* v2.5: licença — o resumo vem do PC junto com os campos. Vencida: não cria inspeção nova (as que
@@ -3049,7 +3074,7 @@ function graficoSVG(series, opc){
    ===================================================================== */
 const GPS = {estado:"parado", motivo:"", ult:null, watch:null, sim:null, ouvintes:[], desde:0};
 const MOTIVOS = {
-  semHttps:"O app foi aberto como arquivo ou por um endereço sem https — o navegador só libera o GPS no app instalado por um endereço https (veja Dados › Instalar).",
+  semHttps:"O app foi aberto como arquivo ou por um endereço sem https — o navegador só libera o GPS no app instalado por um endereço https (veja Ajustes › Instalar no celular).",
   iframe:"Esta é a prévia aberta dentro de outra página (como o visualizador do Claude), que não libera o GPS. No app instalado no celular o GPS funciona. Aqui dá para usar a simulação.",
   negado:"A permissão de localização foi negada. Android: toque no cadeado ao lado do endereço › Permissões › Local › Permitir. iPhone: Ajustes › Privacidade › Serviços de Localização › Safari (ou Caderneta) › Ao Usar o App, com Localização Precisa ligada.",
   semAparelho:"Este navegador não tem acesso ao GPS.",
@@ -3356,6 +3381,7 @@ const ICONES = {
   andar:'<circle cx="13" cy="4.5" r="2"/><path d="m10 21 2-6 3 3v3M8 12l3-4 3 2 3 1M11 8l-1 5"/>',
   agenda:'<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M8.5 3v4M15.5 3v4M8 14h3M8 17h6"/>',
   camera:'<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.6"/>',
+  ajustes:'<circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.6M12 18.6v2.6M2.8 12h2.6M18.6 12h2.6M5.5 5.5l1.8 1.8M16.7 16.7l1.8 1.8M5.5 18.5l1.8-1.8M16.7 7.3l1.8-1.8"/>',
 };
 function ico(n, extra){ return '<svg class="ico' + (extra ? " " + extra : "") + '" viewBox="0 0 24 24" aria-hidden="true">' + (ICONES[n] || "") + "</svg>"; }
 /* v2.5: marca do Vana (Vána, a Valië das flores; os Vanir; vana = bosque) e da Orshu, dona do Vana */
@@ -3479,7 +3505,7 @@ function carimbo(){
    TELAS — cada função devolve o HTML de uma tela.
    ===================================================================== */
 const S = {tela:"campos", campoId:null, inspId:null, pontoIdx:null, busca:""};
-const ABA_DA_TELA = {campos:"campos", campo:"campos", registro:"campos", agenda:"agenda", colheita:"agenda", insp:"contagem", ponto:"contagem", mapa:"mapa", rel:"rel", dados:"dados"};
+const ABA_DA_TELA = {campos:"campos", campo:"campos", registro:"campos", agenda:"agenda", colheita:"agenda", insp:"contagem", ponto:"contagem", mapa:"mapa", rel:"rel", dados:"dados", ajustes:"ajustes"};
 const ABERTOS = new Set(["sec-pontos", "sec-enviar"]);
 let instalarEvt = null;
 
@@ -3517,8 +3543,8 @@ function fChk(bind, rot, val, o){
   return '<label class="chk"><input type="checkbox" data-b="' + bind + '" data-t="b"' + (val ? " checked" : "") + (o.id ? ' id="' + o.id + '"' : "") + "> <span>" + rot + "</span></label>";
 }
 function avisoPrevia(){
-  if (emVisualizador()) return '<div class="faixa-previa"><b>Prévia.</b> Aqui o visualizador desliga o GPS, o PDF e o menu Compartilhar. Para usar no campo, instale o app no celular (aba Dados › Instalar no celular). Para testar o mapa, use a simulação do GPS.</div>';
-  if (!/^https?:$/.test(location.protocol)) return '<div class="faixa-previa"><b>Aberto como arquivo.</b> Os dados ficam só neste navegador e o GPS pode não funcionar. Para o campo, use o app instalado pelo endereço https (aba Dados › Instalar no celular).</div>';
+  if (emVisualizador()) return '<div class="faixa-previa"><b>Prévia.</b> Aqui o visualizador desliga o GPS, o PDF e o menu Compartilhar. Para usar no campo, instale o app no celular (aba Ajustes › Instalar no celular). Para testar o mapa, use a simulação do GPS.</div>';
+  if (!/^https?:$/.test(location.protocol)) return '<div class="faixa-previa"><b>Aberto como arquivo.</b> Os dados ficam só neste navegador e o GPS pode não funcionar. Para o campo, use o app instalado pelo endereço https (aba Ajustes › Instalar no celular).</div>';
   return "";
 }
 function dentroDoCampo(c){ return [c.fazenda, c.hibrido, num(c.area) ? fmtNum(num(c.area), 1).replace(",0", "") + " ha" : ""].filter(Boolean).join(" · "); }
@@ -4201,33 +4227,54 @@ function telaDados(){
     "<p style=\"margin:0\"><b>No Vana do computador:</b> menu <i>Arquivo › Importar contagens…</i> e escolha o .json. Inspeções que você corrigir no celular e mandar de novo são atualizadas lá.</p></div></details>";
   env += "</div>";
   h += sec("sec-enviar", "Enviar para o computador", pend.length ? pend.length + " para enviar" : "em dia", env, {aberto:true});
-  h += secProtecao() + secPin() + secLicenca();
   h += secWifi();
   h += sec("sec-receber", "Receber do computador", "", '<div class="pilha" style="gap:10px"><p class="peq" style="margin:0;color:var(--tinta2)">No programa do PC use <i>Arquivo › Enviar campos para a Caderneta…</i>: vem a lista de campos com área, híbrido, RC, o limite do pivô/gleba e as contagens anteriores (para a fase da curva). Também abre aqui uma cópia de segurança da Caderneta (.json).</p>' +
     '<div class="btns"><button class="btn pri" data-a="receber">' + ico("receber") + " Abrir arquivo (.json)</button></div></div>");
-  h += sec("sec-instalar", "Instalar no celular", estadoInstalacao().curto, htmlInstalar());
   h += sec("sec-copias", "Cópias de segurança", "automáticas", '<div id="lista-copias" class="pilha" style="gap:9px"><p class="peq mut" style="margin:0">Carregando…</p></div>');
   h += sec("sec-lixeira", "Lixeira", DB.lixeira.length ? DB.lixeira.length + " item(ns)" : "vazia", htmlLixeira());
-  h += sec("sec-ajustes", "Ajustes", "", htmlAjustes());
+  h += '<p class="peq mut" style="margin:0">Usuário, PIN, chave de proteção, licença e preferências ficam na aba <button type="button" class="link" data-a="ir-ajustes">Ajustes</button>.</p>';
+  return h + "</div>";
+}
+/* v2.5: aba Ajustes — quem usa (usuário e aparelho), segurança (PIN e chave), licença e preferências */
+function telaAjustes(){
+  let h = '<div class="cab"><div class="cresce"><h2>Ajustes</h2><div class="sub">Usuário, PIN, chave de proteção, licença e preferências</div></div></div>';
+  h += '<div class="pilha">' + avisoPrevia();
+  h += secUsuario() + secPin() + secProtecao() + secLicenca();
+  h += sec("sec-ajustes", "Preferências", "", htmlAjustes(), {aberto:false});
+  h += sec("sec-instalar", "Instalar no celular", estadoInstalacao().curto, htmlInstalar());
   h += sec("sec-sobre", "Sobre os cálculos", "", htmlSobre());
   const temEx = DB.campos.some(c => c.exemplo);
   h += '<div class="btns">' + (temEx ? '<button class="btn" data-a="apagar-exemplo">Apagar os dados de exemplo</button>' : '<button class="btn" data-a="criar-exemplo">Mostrar dados de exemplo</button>') +
     '<button class="btn perigo" data-a="apagar-tudo">' + ico("lixo") + " Apagar tudo</button></div>";
-  h += '<p class="peq mut" style="text-align:center;margin:6px 0 0">' + ROTULO_APP + " · mesmas regras do Vana do computador · aparelho " + esc(DB.aparelho.slice(-6)) +
+  h += '<p class="peq mut" style="text-align:center;margin:6px 0 0">' + ROTULO_APP + " · mesmas regras do Vana do computador · " + esc(nomeAparelho()) +
     (DB.usuario ? " · " + esc(DB.usuario.nome || "") + " (" + esc(DB.usuario.codigo) + ")" : " · sem usuário: receba os campos do PC para parear") + "</p>";
   h += '<div class="sobre-vana"><div class="sv-logo">' + VANA_LOGO_SVG + '</div><p class="peq mut">O nome vem de <b>Vána</b>, a Valië das flores e da juventude em <i>O Silmarillion</i> (Tolkien) — por onde passa, as flores se abrem —, dos <b>Vanir</b>, deuses nórdicos da fertilidade e da colheita, e de <i>vana</i>, “bosque” em sânscrito. Um nome para quem acompanha o florescimento.</p>' +
     '<div class="sv-orshu"><img src="' + ORSHU_LOGO + '" alt="Orshu" width="120" height="47"><span class="peq mut">' + esc(PROPRIEDADE) + "</span></div></div>";
   return h + "</div>";
 }
+function secUsuario(){
+  const u = DB.usuario;
+  const corpo = '<div class="pilha" style="gap:10px">' +
+    (u ? '<div class="nota"><b>' + esc(u.nome || u.codigo) + '</b> · código <span class="mono">' + esc(u.codigo) + "</span><br>" +
+         '<span class="peq">O usuário vem do Vana do computador (é o mesmo nos dois). O nome pode ser ajustado aqui: ele vai nos arquivos desta Caderneta.</span></div>' +
+         '<div class="btns"><button class="btn" data-a="usuario-nome">Trocar o nome</button></div>'
+       : '<div class="nota alerta"><b>Sem usuário.</b> Receba os campos do computador (Dados › Receber do computador) ou faça a troca pelo Wi-Fi: a Caderneta passa a usar o usuário do PC.</div>') +
+    '<div class="form">' + fIn("cfg.nomeAparelho", "Nome deste aparelho", DB.cfg.nomeAparelho, {ph:nomeAparelhoPadrao(), tudo:true, dica:"Aparece no PC (Usuário e aparelhos) e nos arquivos enviados. Ex.: Celular do campo."}) + "</div>" +
+    '<p class="peq mut" style="margin:0">Identificação do aparelho: <span class="mono">' + esc(DB.aparelho) + "</span></p></div>";
+  return sec("sec-usuario", "Usuário e aparelho", u ? (u.nome || u.codigo) : "sem usuário", corpo, {aberto:!u});
+}
+function pinMin(){ const m = Math.round(num(DB && DB.cfg && DB.cfg.pinMin)); return [1, 5, 15, 30, 60].indexOf(m) >= 0 ? m : PIN_MIN; }
 /* v2.5: proteção dos arquivos (chave do PC pareado) */
 function secPin(){
   const on = !!PIN.meta;
   const corpo = '<div class="pilha" style="gap:10px"><div class="nota' + (on ? "" : "") + '">' + (on
-    ? "<b>PIN ligado.</b> Dados, cópias e fotos deste aparelho ficam criptografados. O PIN é pedido ao abrir e depois de " + PIN_MIN + " minutos fora." +
+    ? "<b>PIN ligado.</b> Dados, cópias e fotos deste aparelho ficam criptografados. O PIN é pedido ao abrir e depois de " + pinMin() + (pinMin() === 1 ? " minuto" : " minutos") + " fora." +
       (PIN.meta.pc ? " Esqueceu: a chave do PC destrava." : " <b>Sem a chave do PC guardada:</b> pareie para poder recuperar se esquecer o PIN.")
     : "Com PIN, quem pegar o celular desbloqueado não abre os seus campos, inspeções e fotos.") + "</div>" +
     '<div class="btns">' + (on ? '<button class="btn" data-a="pin-trocar">Trocar o PIN</button><button class="btn" data-a="pin-desligar">Desligar o PIN</button>'
-      : '<button class="btn pri" data-a="pin-ligar">Ligar o PIN</button>') + "</div></div>";
+      : '<button class="btn pri" data-a="pin-ligar">Ligar o PIN</button>') + "</div>" +
+    (on ? '<div class="form">' + fSel("cfg.pinMin", "Pedir o PIN depois de quanto tempo fora do app", [[1, "1 minuto"], [5, "5 minutos"], [15, "15 minutos"], [30, "30 minutos"], [60, "1 hora"]], pinMin(), {t:"i", tudo:true}) + "</div>" : "") +
+    "</div>";
   return sec("sec-pin", "Senha (PIN) do app", on ? "ligado" : "desligado", corpo, {aberto:false});
 }
 /* v2.5: licença — o QR do "pedido de licença" do usuário vem pronto do PC (Python desenha a matriz),
@@ -4253,14 +4300,50 @@ function secLicenca(){
 }
 function secProtecao(){
   const k = DB.chaveAtual && DB.chaves && DB.chaves[DB.chaveAtual] ? DB.chaveAtual : "";
-  const n = Object.keys(DB.chaves || {}).length;
+  const ks = Object.keys(DB.chaves || {});
+  const lista = ks.length ? '<div class="lista chaves">' + ks.map(id => {
+      const atual = id === k;
+      return '<div class="item" style="cursor:default"><div class="t1 mono">' + esc(id.slice(0, 4).toUpperCase()) + (atual ? ' <span class="tag-atual">atual</span>' : "") + "</div>" +
+        '<div class="t2">' + (atual ? "os arquivos que saem daqui usam esta" : "só abre arquivos feitos com ela") + "</div>" +
+        '<div class="dir btns">' + (atual ? "" : '<button class="btn peq" data-a="chave-usar" data-id="' + esc(id) + '">Usar esta</button>') +
+        '<button class="btn peq" data-a="chave-mostrar" data-id="' + esc(id) + '">Mostrar</button>' +
+        (atual ? "" : '<button class="btn peq" data-a="chave-remover" data-id="' + esc(id) + '" aria-label="Remover a chave ' + esc(id.slice(0, 4).toUpperCase()) + '">' + ico("lixo") + "</button>") + "</div></div>";
+    }).join("") + "</div>" : "";
   const corpo = '<div class="pilha" style="gap:10px">' + (k
-    ? '<div class="nota"><b>Protegidos</b> com a chave ' + esc(k.slice(0, 4).toUpperCase()) + ' do computador. Os arquivos que saem daqui (para o PC e as cópias) vão criptografados: só o seu PC (ou esta Caderneta) abre.' +
-      (n > 1 ? " " + (n - 1) + " outra(s) chave(s) também abrem arquivos aqui." : "") + "</div>"
+    ? '<div class="nota"><b>Protegidos</b> com a chave ' + esc(k.slice(0, 4).toUpperCase()) + ' do computador. Os arquivos que saem daqui (para o PC e as cópias) vão criptografados: só o seu PC (ou esta Caderneta) abre.</div>'
     : '<div class="nota alerta"><b>Sem chave de proteção.</b> Os arquivos saem sem criptografia. No computador abra <i>Menu › Usuário e aparelhos › Chave de proteção</i> e leia o QR aqui (a troca pelo Wi-Fi também entrega a chave).</div>') +
+    lista +
+    (ks.length > 1 ? '<p class="peq mut" style="margin:0">Cada instalação do Vana no PC tem a sua chave. A <b>atual</b> tem de ser a do computador que recebe os seus arquivos. Arquivo recusado no PC por causa da chave: toque em <i>Mostrar</i> e digite as letras no PC (Importar contagens › “Adicionar a chave”).</p>' : "") +
     (temRegras() ? "" : '<div class="nota">' + SEM_REGRAS + "</div>") +
     '<div class="btns"><button class="btn' + (k ? "" : " pri") + '" data-a="chave-qr">' + ico("mira") + " Ler QR da chave</button><button class=\"btn\" data-a=\"chave-digitar\">Digitar a chave</button></div></div>";
   return sec("sec-protecao", "Proteção dos arquivos", k ? "protegidos · chave " + k.slice(0, 4).toUpperCase() : "sem chave", corpo, {aberto:!k});
+}
+async function chaveMostrar(id){
+  const txt = DB.chaves && DB.chaves[id]; if (!txt) return;
+  if (!(await confirmar("Mostrar a chave " + id.slice(0, 4).toUpperCase() + "?", "Quem tiver estas letras abre os seus arquivos protegidos. Mostre só para digitar no SEU computador; não mande por mensagem nem foto.", "Mostrar"))) return;
+  const grp = String(txt).replace(/(.{4})(?=.)/g, "$1-");
+  const v = await dialogo({titulo:"Chave " + id.slice(0, 4).toUpperCase(), html:'<p>No Vana do computador: <i>Menu › Usuário e aparelhos › Chave de proteção › Adicionar esta chave</i> (ou na importação recusada, “Adicionar a chave”).</p><p class="mono" style="font-size:17px;line-height:1.6;word-break:break-all;user-select:all">' + esc(grp) + "</p>",
+    botoes:[{rotulo:"Fechar", valor:null}, {rotulo:"Copiar", valor:"copiar", classe:"pri"}]});
+  if (v === "copiar") copiarTexto(grp, "Chave");
+}
+async function chaveUsar(id){
+  if (!DB.chaves || !DB.chaves[id] || id === DB.chaveAtual) return;
+  if (!(await confirmar("Usar a chave " + id.slice(0, 4).toUpperCase() + "?", "Os próximos arquivos (para o PC e as cópias) saem com ela. Use a chave do computador que vai receber os arquivos.", "Usar esta"))) return;
+  DB.chaveAtual = id; salvar(); render(); aviso("Chave " + id.slice(0, 4).toUpperCase() + " em uso");
+}
+async function chaveRemover(id){
+  if (!DB.chaves || !DB.chaves[id] || id === DB.chaveAtual) return;
+  if (!(await confirmar("Remover a chave " + id.slice(0, 4).toUpperCase() + "?", "Arquivos feitos com ela (de outro PC ou de uma instalação antiga) não abrem mais aqui.", "Remover", true))) return;
+  delete DB.chaves[id]; salvar(); render(); aviso("Chave removida");
+}
+async function usuarioNome(){
+  const u = DB.usuario; if (!u) return;
+  const v = await dialogo({titulo:"Seu nome", html:'<p>Como aparece nos arquivos desta Caderneta. O código (' + esc(u.codigo) + ') continua o mesmo.</p><div class="f tudo"><input id="u-nome" maxlength="60" value="' + esc(u.nome || "") + '" autocomplete="name"></div>',
+    botoes:[{rotulo:"Cancelar", valor:null}, {rotulo:"Salvar", valor:"ok", classe:"pri", coletar:veu => veu.querySelector("#u-nome").value}]});
+  const n = String(v || "").replace(/\s+/g, " ").trim();
+  if (!v) return;
+  if (n.length < 2) { aviso("Nome curto demais"); return; }
+  u.nome = n; salvar(); render(); aviso("Nome salvo");
 }
 function estadoInstalacao(){
   const inst = (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true;
@@ -4690,7 +4773,7 @@ async function pdfComFotos(modo){
    nos contadores, exportar/importar.
    ===================================================================== */
 const PILHA = [];
-const ULTIMA = {campos:"campos", contagem:"insp", mapa:"mapa", rel:"rel", dados:"dados"};
+const ULTIMA = {campos:"campos", contagem:"insp", mapa:"mapa", rel:"rel", dados:"dados", ajustes:"ajustes"};
 function estadoAtual(){ return {tela:S.tela, campoId:S.campoId, inspId:S.inspId, pontoIdx:S.pontoIdx}; }
 function ir(tela, extra, opc){
   opc = opc || {};
@@ -4724,7 +4807,7 @@ function irAba(aba){
     if (aba === "contagem") return ir(atual === "contagem" ? "insp" : (ULTIMA.contagem === "ponto" && inspPor(S.inspId) && S.pontoIdx != null ? "ponto" : "insp"));
     return ir(aba);
   }
-  ir("dados");
+  ir(aba === "ajustes" ? "ajustes" : "dados");
 }
 
 /* ---------------------------------------------------------------- render */
@@ -4749,6 +4832,7 @@ function render(){
       case "mapa": h = telaMapa(); break;
       case "rel": h = telaRel(); break;
       case "dados": h = telaDados(); break;
+      case "ajustes": h = telaAjustes(); break;
       default: S.tela = "campos"; h = telaCampos();
     }
   } catch (e) {
@@ -4846,7 +4930,7 @@ function valorDe(el){
   return v;
 }
 const RERENDER = ["insp.recomAuto", "cfg.mostrarPM", "cfg.mostrarFP", "cfg.msgRecomendacao", "campo.caminho.forma", "campo.machos", "campo.gleba",
-                  "cfg.gpsTrilha", "cfg.msgDecimal", "cfg.msgProxima", "cfg.msgMaiusculas"];
+                  "cfg.gpsTrilha", "cfg.msgDecimal", "cfg.msgProxima", "cfg.msgMaiusculas", "cfg.pinMin"];
 function aoMudarBind(el, fim){
   const path = el.dataset.b, a = alvoBind(path);
   if (!a) return;
@@ -5078,6 +5162,11 @@ async function acao(a, b, id){
     case "pin-desligar": return pinDesligar();
     case "pin-trocar": return pinTrocar();
     case "chave-digitar": return pedirChave("", "digitar");
+    case "chave-usar": return chaveUsar(id);
+    case "chave-mostrar": return chaveMostrar(id);
+    case "chave-remover": return chaveRemover(id);
+    case "usuario-nome": return usuarioNome();
+    case "ir-ajustes": return ir("ajustes");
     case "wifi-trocar": return trocarWifi();
     case "ag-filtro": S.agFiltro = b.dataset.v; render(); return;
     case "ag-colheita": return ir("colheita", {colTarefa:id});
@@ -6338,7 +6427,7 @@ function semearExemplo(){
   Object.assign(c, {codigo:"EXEMPLO", gleba:"G1", safra:"27", pivo:"3", fazenda:"Fazenda Exemplo", cooperante:"Cooperante Exemplo",
     municipio:"Primavera do Leste", estado:"MT", area:50, areaPivo:areaPivo, hibrido:"HIBRIDO 1234PRO3", proporcao:"4:1", machos:2,
     rc:"Representante Exemplo", at:"AT Exemplo", lat:cLat, lon:cLon, limite:[meia], limiteNome:"exemplo (meio pivô)",
-    exemplo:true, origem:"celular", obs:"Campo fictício para mostrar o app. Apague em Dados › Apagar os dados de exemplo."});
+    exemplo:true, origem:"celular", obs:"Campo fictício para mostrar o app. Apague em Ajustes › Apagar os dados de exemplo."});
   DB.campos.push(c);
   const plano = planoDoCampo(c, 15);
   const ruido = (p, k) => ({lat:p.lat + Math.sin(k * 7.3) * 0.00003, lon:p.lon + Math.cos(k * 5.1) * 0.00003});
@@ -6374,7 +6463,7 @@ function semearExemplo(){
 }
 
 function montarCasca(){
-  const abas = [["campos", "campos", "Campos"], ["agenda", "agenda", "Agenda"], ["contagem", "contagem", "Contagem"], ["mapa", "mapa", "Mapa"], ["rel", "relatorio", "Relatório"], ["dados", "dados", "Dados"]];
+  const abas = [["campos", "campos", "Campos"], ["agenda", "agenda", "Agenda"], ["contagem", "contagem", "Contagem"], ["mapa", "mapa", "Mapa"], ["rel", "relatorio", "Relatório"], ["dados", "dados", "Dados"], ["ajustes", "ajustes", "Ajustes"]];
   document.getElementById("abas").innerHTML = abas.map(([a, i, r]) => '<button type="button" data-aba="' + a + '" aria-current="false">' + ico(i) + "<span>" + r + "</span>" + (a === "dados" ? '<span class="bolinha" hidden></span>' : "") + "</button>").join("");
   document.getElementById("marca").outerHTML = MARCA;
   document.getElementById("b-sol").innerHTML = ico("sol");
