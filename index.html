@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-NoQm6o9P4exzG/JVedll3eYlbbZsYUQJvw5xrPjpc7A='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src 'self' http: https://server.arcgisonline.com; font-src 'self'; worker-src 'self'; manifest-src 'self'; media-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-6T4Pc7D/rgBpG1fuDvz1SF8gbSnNLX4bCshH0BJTBQg='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src 'self' http: https://server.arcgisonline.com; font-src 'self'; worker-src 'self'; manifest-src 'self'; media-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#FFFFFF">
 <meta name="mobile-web-app-capable" content="yes">
@@ -189,6 +189,7 @@ main{flex:1;width:100%;max-width:720px;margin:0 auto;padding:14px 16px calc(98px
 #trava-pin .tp-marca{font-family:var(--f-titulo);font-size:20px}
 #trava-pin input{width:100%;box-sizing:border-box;min-width:0;font-size:28px;letter-spacing:.35em;text-align:center;padding:12px;border-radius:12px;border:1px solid var(--linha2)}
 #trava-pin .tp-erro{color:var(--r3);margin:0}
+.lic-pedido{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.qr-lic{flex:none;border-radius:8px;border:1px solid var(--linha)}.lic-txt{font-size:12px;overflow-wrap:anywhere}
 .st-on{display:inline-flex;max-width:100%;border-radius:999px;overflow:hidden;border:1px solid var(--azul)}
 .frases .st-on button{border:0;border-radius:0;background:var(--azul);color:var(--sobre-azul);font-weight:600}
 .frases .st-on .st-onde{background:var(--azul-suave);color:var(--azul-forte);font-weight:600;border-left:1px solid var(--azul)}
@@ -1224,12 +1225,12 @@ async function abrirEnvelope(env, chaves){
 /* =====================================================================
    v2.5 — SENHA (PIN) DO APP. Com o PIN ligado, tudo o que a Caderneta guarda no aparelho (dados,
    cópias automáticas e fotos) fica criptografado com uma chave aleatória (AES-256). Essa chave é
-   guardada duas vezes, embrulhada: pelo PIN (PBKDF2, 250 mil voltas) e pela chave de proteção do
+   guardada duas vezes, embrulhada: pelo PIN (PBKDF2, 600 mil voltas) e pela chave de proteção do
    PC pareado — esqueceu o PIN, a chave do PC (QR) destrava. O app pede o PIN ao abrir e depois de
    15 minutos fora.
    ===================================================================== */
 const PIN = {meta:null, dek:null, raw:null, seq:0, escondido:0};
-const PIN_VOLTAS = 250000, PIN_MIN = 15, CHAVE_PIN = CHAVE + ".pin";
+const PIN_VOLTAS = 600000, PIN_MIN = 15, CHAVE_PIN = CHAVE + ".pin";
 function pinMeta(){ try { const t = localStorage.getItem(CHAVE_PIN); return t ? JSON.parse(t) : null; } catch (e) { return null; } }
 function pinMetaGravar(m){
   try { if (m) localStorage.setItem(CHAVE_PIN, JSON.stringify(m)); else localStorage.removeItem(CHAVE_PIN); } catch (e) {}
@@ -1705,6 +1706,7 @@ function aplicar(d){
     n.cfg = Object.assign({}, CFG_PADRAO, d.cfg || {});
     n.salvoEm = d.salvoEm || 0;
     n.regras = (d.regras && typeof d.regras === "object") ? d.regras : null;        /* v2.5: regras do PC */
+    n.licenca = (d.licenca && typeof d.licenca === "object") ? d.licenca : null;     /* v2.5: licença do PC (resumo) */
     n.chaves = (d.chaves && typeof d.chaves === "object" && !Array.isArray(d.chaves)) ? d.chaves : {};   /* v2.5: chave(s) de proteção */
     n.chaveAtual = typeof d.chaveAtual === "string" ? d.chaveAtual : "";
     DB = n;
@@ -1916,6 +1918,26 @@ async function salvarCopia(){
         (protegida ? " (protegida)" : " — SEM proteção: pareie com o PC em Dados › Proteção dos arquivos"), null, protegida ? 2600 : 7000);
 }
 /* v2.5: lembrete semanal — 7 dias sem cópia de segurança fora do app: aviso fixo na lista de campos */
+/* v2.5: licença — o resumo vem do PC junto com os campos. Vencida: não cria inspeção nova (as que
+   já existem continuam abertas, editáveis e podem ir para o PC). Sem resumo (PC antigo): livre. */
+function licencaEmDia(){
+  const L = DB.licenca;
+  if (!L || L.em_dia !== false) {
+    if (L && L.valido_ate && L.estado !== "avaliacao" && hojeISO() > L.valido_ate) {
+      const fim = new Date(L.valido_ate + "T12:00:00"); fim.setDate(fim.getDate() + 7);         /* a mesma tolerância do PC */
+      return hojeISO() <= fim.toISOString().slice(0, 10);
+    }
+    return true;
+  }
+  return false;
+}
+function htmlLicenca(){
+  const L = DB.licenca; if (!L) return "";
+  const dias = L.valido_ate ? Math.round((new Date(L.valido_ate + "T12:00:00") - new Date(hojeISO() + "T12:00:00")) / 864e5) : null;
+  if (!licencaEmDia()) return '<div class="nota alerta"><b>Licença do Vana vencida.</b> Dá para ver e enviar o que já está aqui; para criar inspeções novas, renove no PC (Menu › Licença) e receba os campos de novo.</div>';
+  if (dias != null && dias <= 15) return '<div class="nota alerta"><b>' + (L.estado === "avaliacao" ? "Avaliação" : "A licença do Vana") + (dias >= 0 ? " termina em " + dias + " dia" + (dias === 1 ? "" : "s") : " venceu") + "</b> (" + dataBR(L.valido_ate) + "). Renove no PC (Menu › Licença).</div>";
+  return "";
+}
 function htmlLembreteCopia(){
   const ult = DB.cfg.ultimaCopiaArq || 0, adiado = DB.cfg.lembreteCopiaAte || 0;
   if (!DB.inspecoes.some(i => !i.exemplo) || Date.now() - ult < 7 * 864e5 || Date.now() < adiado) return "";
@@ -2248,6 +2270,167 @@ function csvPontos(){
   return L.join("\r\n");
 }
 
+/* ================================================= PLANILHA EXCEL (.xlsx)
+   v2.5: a mesma planilha do programa do PC (Contagens, Pontos, Fora de contagem), mais o ponto fixo
+   e os campos — feita aqui no celular, sem internet. O .xlsx é um zip de XML: gravado "sem
+   compressão" (é aceito por Excel, Google Planilhas e LibreOffice). */
+const CRC_TAB = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(b){ let c = 0xFFFFFFFF; for (let i = 0; i < b.length; i++) c = CRC_TAB[(c ^ b[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+function zipGuardado(arquivos){                 /* [[nome, texto]] -> Uint8Array (zip, método 0) */
+  const enc = new TextEncoder(), partes = [], central = [];
+  let pos = 0;
+  const d = new Date(), hora = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1),
+        dia = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+  arquivos.forEach(([nome, txt]) => {
+    const n = enc.encode(nome), dados = typeof txt === "string" ? enc.encode(txt) : txt, crc = crc32(dados);
+    const loc = new DataView(new ArrayBuffer(30));
+    [[0, 0x04034b50, 4], [4, 20, 2], [6, 0x0800, 2], [8, 0, 2], [10, hora, 2], [12, dia, 2], [14, crc, 4],
+     [18, dados.length, 4], [22, dados.length, 4], [26, n.length, 2], [28, 0, 2]].forEach(([o, v, s]) => s === 4 ? loc.setUint32(o, v, true) : loc.setUint16(o, v, true));
+    const cen = new DataView(new ArrayBuffer(46));
+    [[0, 0x02014b50, 4], [4, 20, 2], [6, 20, 2], [8, 0x0800, 2], [10, 0, 2], [12, hora, 2], [14, dia, 2], [16, crc, 4],
+     [20, dados.length, 4], [24, dados.length, 4], [28, n.length, 2], [30, 0, 2], [32, 0, 2], [34, 0, 2], [36, 0, 2], [38, 0, 4], [42, pos, 4]]
+      .forEach(([o, v, s]) => s === 4 ? cen.setUint32(o, v, true) : cen.setUint16(o, v, true));
+    partes.push(new Uint8Array(loc.buffer), n, dados);
+    central.push(new Uint8Array(cen.buffer), n);
+    pos += 30 + n.length + dados.length;
+  });
+  const tamCentral = central.reduce((s, x) => s + x.length, 0);
+  const fim = new DataView(new ArrayBuffer(22));
+  [[0, 0x06054b50, 4], [4, 0, 2], [6, 0, 2], [8, arquivos.length, 2], [10, arquivos.length, 2], [12, tamCentral, 4], [16, pos, 4], [20, 0, 2]]
+    .forEach(([o, v, s]) => s === 4 ? fim.setUint32(o, v, true) : fim.setUint16(o, v, true));
+  const tudo = partes.concat(central, [new Uint8Array(fim.buffer)]);
+  const out = new Uint8Array(tudo.reduce((s, x) => s + x.length, 0));
+  let k = 0; tudo.forEach(x => { out.set(x, k); k += x.length; });
+  return out;
+}
+/* abas: [{nome, cab:[...], larg:[...], linhas:[[...]], fmt:{coluna:"data"|"pct"|"num"|"pct3"}, cor:{coluna:fn(linha)->"RRGGBB"}}] */
+function xlsxMontar(abas, autor){
+  const xe = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, "");
+  const col = n => { let s = ""; n++; while (n) { const r = (n - 1) % 26; s = String.fromCharCode(65 + r) + s; n = (n - r - 1) / 26; } return s; };
+  const serial = iso => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || ""); return m ? (Date.UTC(+m[1], +m[2] - 1, +m[3]) - Date.UTC(1899, 11, 30)) / 864e5 : null; };
+  const cores = [];                              /* preenchimentos extras (classe) */
+  const estiloCor = (hex, base) => { let i = cores.findIndex(c => c[0] === hex && c[1] === base); if (i < 0) { cores.push([hex, base]); i = cores.length - 1; } return 6 + i; };
+  const BASE = {data:2, pct:3, num:4, pct3:5};
+  const folhas = abas.map((a, ia) => {
+    const lin = [];
+    const cab = a.cab.map((h, j) => '<c r="' + col(j) + '1" t="inlineStr" s="1"><is><t>' + xe(h) + "</t></is></c>").join("");
+    lin.push('<row r="1">' + cab + "</row>");
+    a.linhas.forEach((L, li) => {
+      const r = li + 2;
+      const cs = L.map((v, j) => {
+        if (v == null || v === "") return "";
+        const ref = col(j) + r, f = (a.fmt || {})[j];
+        let s = f ? BASE[f] : 0;
+        const cf = (a.cor || {})[j] && a.cor[j](L);
+        if (cf) s = estiloCor(cf, s);
+        if (f === "data") { const n = serial(v); if (n != null) return '<c r="' + ref + '" s="' + s + '"><v>' + n + "</v></c>"; }
+        if (typeof v === "number" && isFinite(v)) return '<c r="' + ref + '"' + (s ? ' s="' + s + '"' : "") + "><v>" + (Math.round(v * 1e9) / 1e9) + "</v></c>";
+        return '<c r="' + ref + '" t="inlineStr"' + (s ? ' s="' + s + '"' : "") + '><is><t xml:space="preserve">' + xe(v) + "</t></is></c>";
+      }).join("");
+      lin.push('<row r="' + r + '">' + cs + "</row>");
+    });
+    const ult = col(Math.max(0, a.cab.length - 1)) + Math.max(1, a.linhas.length + 1);
+    const larg = a.cab.map((h, j) => '<col min="' + (j + 1) + '" max="' + (j + 1) + '" width="' + Math.max((a.larg || [])[j] || 0, Math.max(8, Math.min(40, String(h).length + 2))) + '" customWidth="1"/>').join("");
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+      '<sheetViews><sheetView workbookViewId="0"' + (ia === 0 ? ' tabSelected="1"' : "") + '><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>' +
+      "<cols>" + larg + "</cols><sheetData>" + lin.join("") + "</sheetData>" +
+      (a.linhas.length ? '<autoFilter ref="A1:' + ult + '"/>' : "") + "</worksheet>";
+  });
+  const numFmts = '<numFmts count="3"><numFmt numFmtId="164" formatCode="dd/mm/yyyy"/><numFmt numFmtId="165" formatCode="0.00"/><numFmt numFmtId="166" formatCode="0.000"/></numFmts>';
+  const xf = (fmt, fill, fonte) => '<xf numFmtId="' + fmt + '" fontId="' + (fonte || 0) + '" fillId="' + (fill || 0) + '" borderId="0" xfId="0"' + (fmt ? ' applyNumberFormat="1"' : "") + (fill ? ' applyFill="1"' : "") + (fonte ? ' applyFont="1"' : "") + "/>";
+  const fmtDe = {0:0, 2:164, 3:165, 4:165, 5:166};
+  const fills = '<fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF1F5C3F"/></patternFill></fill>' +
+    cores.map(c => '<fill><patternFill patternType="solid"><fgColor rgb="FF' + c[0] + '"/></patternFill></fill>').join("");
+  const xfs = [xf(0), xf(0, 2, 1), xf(164), xf(165), xf(165), xf(166)].concat(cores.map((c, i) => xf(fmtDe[c[1]] || 0, 3 + i)));
+  const estilos = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' + numFmts +
+    '<fonts count="2"><font><sz val="10"/><name val="Calibri"/></font><font><b/><sz val="10"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font></fonts>' +
+    '<fills count="' + (3 + cores.length) + '">' + fills + '</fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>' +
+    '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="' + xfs.length + '">' + xfs.join("") + "</cellXfs>" +
+    '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
+  const nomeAba = s => String(s).replace(/[\\\/?*\[\]:]/g, " ").slice(0, 31);
+  const wb = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>' +
+    abas.map((a, i) => '<sheet name="' + xe(nomeAba(a.nome)) + '" sheetId="' + (i + 1) + '" r:id="rId' + (i + 1) + '"/>').join("") + "</sheets></workbook>";
+  const wbRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+    abas.map((a, i) => '<Relationship Id="rId' + (i + 1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet' + (i + 1) + '.xml"/>').join("") +
+    '<Relationship Id="rId' + (abas.length + 1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>';
+  const tipos = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>' +
+    '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>' +
+    abas.map((a, i) => '<Override PartName="/xl/worksheets/sheet' + (i + 1) + '.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>').join("") +
+    '<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/></Types>';
+  const rels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>' +
+    '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/></Relationships>';
+  const core = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">' +
+    "<dc:creator>" + xe(autor || "Vana Caderneta") + '</dc:creator><dcterms:created xsi:type="dcterms:W3CDTF">' + new Date().toISOString().slice(0, 19) + "Z</dcterms:created></cp:coreProperties>";
+  return zipGuardado([["[Content_Types].xml", tipos], ["_rels/.rels", rels], ["docProps/core.xml", core], ["xl/workbook.xml", wb],
+    ["xl/_rels/workbook.xml.rels", wbRels], ["xl/styles.xml", estilos]].concat(folhas.map((f, i) => ["xl/worksheets/sheet" + (i + 1) + ".xml", f])));
+}
+/* cor da classe, clara, como no PC */
+const COR_CLASSE_XLSX = {r0:"D8F0DD", r1:"FFF1C2", r2:"FFD9C7", r3:"F6C6C6", rn:"EEEEEE"};
+/* as abas da planilha, no modelo do programa do PC */
+function planilhaCaderneta(insps){
+  insps = insps.slice().sort((a, b) => (a.data + "|" + String(1e6 + num(a.numero))) < (b.data + "|" + String(1e6 + num(b.numero))) ? -1 : 1);
+  const CC = i => campoPor(i.campoId) || {};
+  const ident = i => { const c = CC(i); return [i.data, c.codigo || "", c.gleba || "", num(i.numero) || i.numero || ""]; };
+  const v = x => x == null ? null : x;
+  /* Contagens (resumo) */
+  const cabC = ["Data", "Contrato", "Gleba", "Nº", "Pontos", "Plantas avaliadas", "F.F.P %"].concat(COD_TIPOS.map(t => NOME_TIPO[t] + " pol. %"),
+    ["E.R. %", "Estigma seco %", "P.T. %", "M.P.1 %", "M.P.2 %", "M.P.3 %", "Atípicas pol. %", "Classe", "Nota desp.", "Nota R/T",
+     "Fora contagem (pol.)", "RC", "AT", "Situação", "Isolamento", "Status", "Fonte", "Obs."]);
+  const iClasse = cabC.indexOf("Classe");
+  const linC = insps.map(i => {
+    const c = CC(i), m = metricas(i, c), comp = composicao(m);
+    return ident(i).concat([m.n, m.base, v(m.ffp)], COD_TIPOS.map(t => m.temDados ? comp[t] : null),
+      [v(m.er), i.estigmaSeco === "" ? null : num(i.estigmaSeco, null), v(m.pt), m.pct.M1P == null ? null : m.pct.M1P,
+       m.pct.M2P == null ? null : m.pct.M2P, m.pct.M3P == null ? null : m.pct.M3P, v(m.atip), m.classe.nome, v(m.notaDesp), v(m.notaAtip),
+       m.foraPolinizando || null, i.representante || c.rc || "", i.at || c.at || "", i.situacao || "", i.isolamento || "",
+       (i.status || []).map(s => s.t).join(" / "), "Caderneta", (i.obs && i.obs.livre) || ""]);
+  });
+  const fmtC = {0:"data"}; for (let j = 6; j <= 16; j++) fmtC[j] = "pct"; fmtC[cabC.indexOf("Atípicas pol. %")] = "pct3";
+  const corC = {}; corC[iClasse] = L => COR_CLASSE_XLSX[CLASSE_CSS[L[iClasse]]] || null;
+  /* Pontos — mesma ordem de colunas do PC */
+  const chP = [["PT", "P.T."], ["ER", "E.R."]].concat(CH_BASE.map(k => [k, SIGLA[k]]), [["RPF", "R.P.F"], ["RNPF", "R.N.P.F"], ["TPF", "T.P.F"], ["TNPF", "T.N.P.F"]],
+    MACHOS.map(k => [k, SIGLA[k]]), [["RPM", "R.P.M"], ["RNPM", "R.N.P.M"], ["TPM", "T.P.M"], ["TNPM", "T.N.P.M"], ["FP", "F.P."]]);
+  const linP = [];
+  insps.forEach(i => { const c = CC(i), ppp = pppDo(c); i.pontos.forEach(p => {
+    if (!pontoFeito(p)) return;
+    const g = p.gps && p.gps.fonte !== "simulado" ? p.gps : null;
+    linP.push(ident(i).concat([p.i, plantasDoPonto(p, ppp)], chP.map(([k]) => k === "PT" ? ptDoPonto(p, ppp) : num(p.c[k])),
+      [g ? +g.lat.toFixed(7) : null, g ? +g.lon.toFixed(7) : null, g && g.acc != null ? Math.round(g.acc) : null,
+       p.t ? new Date(p.t).toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"}) : "", p.obs || ""]));
+  }); });
+  /* Fora de contagem (caminhamento) */
+  const linF = insps.filter(i => CH_FORA.some(k => num(i.caminhamento && i.caminhamento[k]))).map(i => ident(i).concat(CH_FORA.map(k => num(i.caminhamento[k]))));
+  /* Ponto fixo */
+  let maxRep = 1; const linPF = [];
+  insps.forEach(i => { const pf = i.pontoFixo || {}; if (pfResumo(i) === "não usado") return; const n = pfReps(i); maxRep = Math.max(maxRep, n);
+    pfLinhas(i).forEach(([k, rot]) => { const arr = pf[k] || [], vals = [];
+      for (let j = 0; j < n; j++) vals.push(arr[j] == null || arr[j] === "" ? null : num(arr[j]));
+      linPF.push({base: ident(i).concat([rot]), vals, med: pfMedia(arr)}); }); });
+  const cabPF = ["Data", "Contrato", "Gleba", "Nº", "Linha"]; for (let j = 1; j <= maxRep; j++) cabPF.push("Rep. " + j); cabPF.push("Média");
+  const linPF2 = linPF.map(x => { const r = x.base.concat(x.vals); while (r.length < 5 + maxRep) r.push(null); r.push(x.med); return r; });
+  const fmtPF = {0:"data"}; fmtPF[5 + maxRep] = "num";
+  /* Campos */
+  const ids = new Set(insps.map(i => i.campoId));
+  const campos = DB.campos.filter(c => !c.exemplo && (ids.has(c.id) || !insps.length));
+  const linCampos = campos.map(c => [c.codigo, c.gleba, c.safra, c.pivo, c.fazenda, c.cooperante, c.municipio, num(c.area, null), c.hibrido, c.femea, c.macho,
+    c.proporcao, num(c.machos, null), c.plantio, c.rc, c.at, pontosRecomendados(c.area) || null, c.obs]);
+  return [
+    {nome:"Contagens", cab:cabC, linhas:linC, fmt:fmtC, cor:corC, larg:[11, 10, 6, 4, 7, 9, 8, 9, 9, 9, 9, 9, 8, 9, 8, 8, 8, 8, 10, 14, 8, 8, 10, 16, 14, 16, 12, 24, 11, 40]},
+    {nome:"Pontos", cab:["Data", "Contrato", "Gleba", "Nº", "Ponto", "Avaliadas"].concat(chP.map(x => x[1]), ["Latitude", "Longitude", "Precisão (m)", "Hora", "Obs. do ponto"]),
+     linhas:linP, fmt:{0:"data"}},
+    {nome:"Fora de contagem", cab:["Data", "Contrato", "Gleba", "Nº"].concat(CH_FORA.map(k => SIGLA[k] || (ATIPICAS.find(a => a.k === k) || {}).s || k)), linhas:linF, fmt:{0:"data"}},
+    {nome:"Ponto fixo", cab:cabPF, linhas:linPF2, fmt:fmtPF},
+    {nome:"Campos", cab:["Contrato", "Gleba", "Safra", "Pivô", "Fazenda", "Cooperante", "Município", "Área (ha)", "Híbrido", "Fêmea", "Macho", "Proporção",
+      "Machos", "Plantio", "RC", "AT", "Pontos sugeridos", "Obs."], linhas:linCampos, fmt:{13:"data"}},
+  ];
+}
+async function baixarPlanilha(insps, nome, modo){
+  const bytes = xlsxMontar(planilhaCaderneta(insps), "Vana Caderneta" + (DB.usuario && DB.usuario.nome ? " — " + DB.usuario.nome : ""));
+  const r = await entregarArquivo(nome, new Blob([bytes], {type:MIME_XLSX}), MIME_XLSX, modo);
+  aviso(r === "cancelado" ? "Cancelado" : "Planilha gerada");
+}
+const MIME_XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
 /* ----------------------------------------------------------- receber do PC */
 /* Pacote de campos do programa do PC: cadastro, limite do pivô/gleba e histórico das contagens. */
 function receberPacote(d, dono){
@@ -2315,6 +2498,7 @@ function juntarCopia(d, substituir){
     vindo.lixeira = antes.lixeira;
     vindo.chaves = antes.chaves; vindo.chaveAtual = antes.chaveAtual;          /* v2.5: a chave e as regras ficam */
     vindo.regras = vindo.regras || antes.regras;
+    vindo.licenca = vindo.licenca || antes.licenca;
     DB = vindo;
     return {campos:vindo.campos.length, inspecoes:vindo.inspecoes.length};
   }
@@ -3242,7 +3426,7 @@ function copiarTexto(txt, rotulo){
 /* ---------------------------------------------------------------- entregar arquivo */
 /* modo: "compartilhar" (menu do celular) ou "salvar" (Downloads). Devolve o que aconteceu. */
 async function entregarArquivo(nome, texto, mime, modo){
-  const blob = new Blob([texto], {type:mime + ";charset=utf-8"});
+  const blob = texto instanceof Blob ? texto : new Blob([texto], {type:mime + ";charset=utf-8"});
   if (emVisualizador() && window.claude && typeof window.claude.use === "function") {
     try {
       const dl = await window.claude.use("downloads");
@@ -3265,6 +3449,7 @@ async function entregarArquivo(nome, texto, mime, modo){
     setTimeout(() => URL.revokeObjectURL(url), 8000);
     return "baixado";
   } catch (e) {}
+  if (typeof texto !== "string") { aviso("Não consegui salvar o arquivo neste navegador."); return "cancelado"; }
   copiarTexto(texto, "Conteúdo do arquivo");
   return "copiado";
 }
@@ -3372,7 +3557,7 @@ function telaCampos(){
   const nHoje = DB.campos.filter(c => AG[c.id] && (AG[c.id].tipo === "hoje" || AG[c.id].tipo === "atrasada")).length;
   let h = '<div class="cab"><div class="cresce"><h2>Campos</h2><div class="sub">' + DB.campos.length + " campo(s) · " + DB.inspecoes.length + " inspeção(ões) neste aparelho" +
     (nHoje ? " · <b>" + nHoje + " para inspecionar hoje</b>" : "") + "</div></div></div>";
-  h += '<div class="pilha">' + avisoPrevia() + htmlLembreteCopia() + htmlPausadas();
+  h += '<div class="pilha">' + avisoPrevia() + htmlLicenca() + htmlLembreteCopia() + htmlPausadas();
   if (pend) h += '<div class="nota alerta linha"><span class="cresce"><b>' + pend + (pend === 1 ? " inspeção ainda não foi" : " inspeções ainda não foram") + "</b> para o computador.</span>" +
                  '<button class="btn peq" data-a="ir" data-para="dados">' + ico("compartilhar") + " Enviar</button></div>";
   h += '<div class="btns"><button class="btn pri" data-a="novo-campo">' + ico("mais") + ' Novo campo</button><button class="btn" data-a="receber">' + ico("receber") + " Receber do PC</button></div>";
@@ -3930,7 +4115,8 @@ function telaRel(){
     '<a class="btn" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(msg) + '">' + ico("conversa") + " WhatsApp</a></div></div>";
   if (!emVisualizador()) h += '<div class="btns">' + (podeCompartilharArquivo() ? '<button class="btn pri" data-a="pdf-arquivo" data-m="compartilhar">' + ico("pdf") + " Relatório PDF com fotos</button>" : "") +
     '<button class="btn' + (podeCompartilharArquivo() ? "" : " pri") + '" data-a="pdf-arquivo" data-m="salvar">' + ico("baixar") + " Salvar PDF</button>" +
-    '<button class="btn" data-a="pdf">' + ico("pdf") + " Imprimir</button></div>" +
+    '<button class="btn" data-a="pdf">' + ico("pdf") + " Imprimir</button>" +
+    '<button class="btn" data-a="xlsx-insp" data-m="' + (podeCompartilharArquivo() ? "compartilhar" : "salvar") + '">' + ico("baixar") + " Planilha Excel</button></div>" +
     '<p class="peq mut" style="margin:-6px 2px 0">O PDF leva a identificação, os índices, ponto a ponto, ponto fixo, observações e as fotos (as marcadas “Relatório”; sem marca, todas). Funciona sem internet.</p>';
   h += sec("sec-medias", "Médias da contagem", m.n + " pontos · " + m.base + " plantas", '<div id="tb-medias">' + tabelaMedias(m) + "</div>" + botoesCopiarTabela("tb-medias", "Médias da contagem"), {liso:true});
   h += sec("sec-por-ponto", "Ponto a ponto", "", '<div id="tb-pontos">' + tabelaPorPonto(i, c) + "</div>" + botoesCopiarTabela("tb-pontos", "Ponto a ponto"), {liso:true});
@@ -4007,7 +4193,7 @@ function telaDados(){
   if (reais.length && pend.length && pend.length < reais.length) env += '<label class="chk"><input type="checkbox" id="enviar-tudo"> <span>Mandar tudo (todas as ' + reais.length + " inspeções), não só as novas</span></label>";
   env += '<div class="nota' + (copiaAtrasada() ? " alerta" : "") + '"><b>Cópia de segurança</b> (fora do app): ' +
     (DB.cfg.ultimaCopiaArq ? "última " + quandoTxt(DB.cfg.ultimaCopiaArq) : "nenhuma ainda") + ". Para restaurar num celular novo, abra o arquivo em <i>Receber do PC</i>.</div>";
-  env += '<div class="btns"><button class="btn" data-a="copia">' + ico("baixar") + ' Salvar cópia de segurança</button><button class="btn peq" data-a="csv">' + ico("baixar") + " Planilha dos pontos (.csv)</button></div>";
+  env += '<div class="btns"><button class="btn" data-a="copia">' + ico("baixar") + ' Salvar cópia de segurança</button><button class="btn" data-a="xlsx-tudo">' + ico("baixar") + ' Planilha Excel (.xlsx)</button><button class="btn peq" data-a="csv">' + ico("baixar") + " Planilha dos pontos (.csv)</button></div>";
   env += '<details class="sec" id="sec-como"' + aberto("sec-como") + '><summary><span class="st">Como passar para o computador</span></summary><div class="sec-c peq" style="color:var(--tinta2);line-height:1.6">' +
     "<p style=\"margin:0 0 8px\"><b>Pelo WhatsApp ou e-mail:</b> toque em <i>Compartilhar arquivo</i> e mande para você mesmo. No computador, baixe o arquivo <span class=\"mono\">caderneta_….json</span>.</p>" +
     "<p style=\"margin:0 0 8px\"><b>Android pelo cabo:</b> toque em <i>Salvar no aparelho</i> (vai para Downloads). Ligue o cabo, escolha <i>Transferência de arquivos</i> no celular e copie o arquivo da pasta Download.</p>" +
@@ -4015,7 +4201,7 @@ function telaDados(){
     "<p style=\"margin:0\"><b>No Vana do computador:</b> menu <i>Arquivo › Importar contagens…</i> e escolha o .json. Inspeções que você corrigir no celular e mandar de novo são atualizadas lá.</p></div></details>";
   env += "</div>";
   h += sec("sec-enviar", "Enviar para o computador", pend.length ? pend.length + " para enviar" : "em dia", env, {aberto:true});
-  h += secProtecao() + secPin();
+  h += secProtecao() + secPin() + secLicenca();
   h += secWifi();
   h += sec("sec-receber", "Receber do computador", "", '<div class="pilha" style="gap:10px"><p class="peq" style="margin:0;color:var(--tinta2)">No programa do PC use <i>Arquivo › Enviar campos para a Caderneta…</i>: vem a lista de campos com área, híbrido, RC, o limite do pivô/gleba e as contagens anteriores (para a fase da curva). Também abre aqui uma cópia de segurança da Caderneta (.json).</p>' +
     '<div class="btns"><button class="btn pri" data-a="receber">' + ico("receber") + " Abrir arquivo (.json)</button></div></div>");
@@ -4043,6 +4229,27 @@ function secPin(){
     '<div class="btns">' + (on ? '<button class="btn" data-a="pin-trocar">Trocar o PIN</button><button class="btn" data-a="pin-desligar">Desligar o PIN</button>'
       : '<button class="btn pri" data-a="pin-ligar">Ligar o PIN</button>') + "</div></div>";
   return sec("sec-pin", "Senha (PIN) do app", on ? "ligado" : "desligado", corpo, {aberto:false});
+}
+/* v2.5: licença — o QR do "pedido de licença" do usuário vem pronto do PC (Python desenha a matriz),
+   junto com os campos. Quem gera a licença lê o QR ou recebe o texto pelo WhatsApp. */
+function qrDeLinhas(linhas, tam){
+  const n = linhas.length; if (!n) return "";
+  const q = 4, t = n + 2 * q; let r = "";
+  linhas.forEach((l, y) => { for (let x = 0; x < l.length; x++) if (l[x] === "1") r += "M" + (x + q) + " " + (y + q) + "h1v1h-1z"; });
+  return '<svg class="qr-lic" viewBox="0 0 ' + t + " " + t + '" width="' + tam + '" height="' + tam + '" role="img" aria-label="QR code do pedido de licença" shape-rendering="crispEdges"><rect width="' + t + '" height="' + t + '" fill="#fff"/><path d="' + r + '" fill="#000"/></svg>';
+}
+function secLicenca(){
+  const L = DB.licenca;
+  if (!L) return sec("sec-licenca", "Licença do Vana", "", '<p class="peq" style="margin:0;color:var(--tinta2)">A licença é do programa do PC. Receba os campos do computador para ver a situação e o pedido de licença.</p>', {aberto:false});
+  const vence = L.valido_ate ? dataBR(L.valido_ate) : "";
+  const situ = !licencaEmDia() ? "vencida" : L.estado === "avaliacao" ? "avaliação até " + vence : vence ? "até " + vence : "sem prazo";
+  const corpo = '<div class="pilha" style="gap:10px">' +
+    (L.cliente ? '<p class="peq" style="margin:0"><b>' + esc(L.cliente) + "</b> · " + esc(situ) + "</p>" : "") +
+    (L.pedido ? '<div class="lic-pedido">' + qrDeLinhas(L.qr || [], 150) + '<div class="pilha" style="gap:6px"><b>Pedido de licença</b>' +
+      '<span class="peq" style="color:var(--tinta2)">Para pedir ou renovar: mostre este QR para quem gera a licença, ou mande o pedido pelo WhatsApp.</span>' +
+      '<code class="lic-txt">' + esc(L.pedido) + '</code><div class="btns"><button class="btn pri" data-a="lic-pedido">Mandar o pedido</button></div></div></div>' : "") +
+    "</div>";
+  return sec("sec-licenca", "Licença do Vana", situ, corpo, {aberto:false});
 }
 function secProtecao(){
   const k = DB.chaveAtual && DB.chaves && DB.chaves[DB.chaveAtual] ? DB.chaveAtual : "";
@@ -4863,6 +5070,11 @@ async function acao(a, b, id){
     case "wifi-qr": return lerQrWifi();
     case "chave-qr": return pedirChave("", "qr");
     case "pin-ligar": return pinLigar();
+    case "lic-pedido": {
+      const t = DB.licenca && DB.licenca.pedido; if (!t) return;
+      if (navigator.share && !emVisualizador()) { navigator.share({text:t}).catch(() => copiarTexto(t, "Pedido de licença")); return; }
+      return copiarTexto(t, "Pedido de licença");
+    }
     case "pin-desligar": return pinDesligar();
     case "pin-trocar": return pinTrocar();
     case "chave-digitar": return pedirChave("", "digitar");
@@ -4877,6 +5089,8 @@ async function acao(a, b, id){
     case "ag-desfazer": { DB.eventos = (DB.eventos || []).filter(e => e.tarefa !== id); salvar(); render(); aviso("Justificativa desfeita"); return; }
     case "nova-insp": {
       const c = campoPor(id); if (!c) return;
+      if (!licencaEmDia()) return dialogo({titulo:"Licença do Vana vencida", texto:"A licença do programa do PC venceu" + (DB.licenca && DB.licenca.valido_ate ? " (" + dataBR(DB.licenca.valido_ate) + ")" : "") +
+        ". As inspeções que já estão aqui continuam abertas e podem ser enviadas ao PC; para criar novas, renove a licença no PC (Menu › Licença) e receba os campos de novo."});
       const hoje = inspsDoCampo(c.id).find(x => x.data === hojeISO());
       if (hoje && !(await confirmar("Já tem inspeção hoje", "A inspeção nº " + hoje.numero + " deste campo já é de hoje. Criar outra mesmo assim?", "Criar outra"))) {
         return ir("insp", {inspId:hoje.id, campoId:c.id, pontoIdx:null});
@@ -5043,6 +5257,16 @@ async function acao(a, b, id){
       return;
     }
     case "retravar": { const x = inspPor(id) || i; retravar(x); render(); aviso("Inspeção travada de novo"); return; }
+    case "xlsx-tudo": {
+      const reais = DB.inspecoes.filter(i => !i.exemplo);
+      if (!reais.length) { aviso("Ainda não há inspeções (as de exemplo não entram)."); return; }
+      await baixarPlanilha(reais, MARCA_ARQ + "caderneta_" + carimbo() + ".xlsx", "salvar"); return;
+    }
+    case "xlsx-insp": {
+      const i = inspPor(S.inspId); if (!i) return;
+      const c = campoPor(i.campoId) || {};
+      await baixarPlanilha([i], MARCA_ARQ + (c.codigo || "campo") + (c.gleba ? "_" + c.gleba : "") + "_C" + (i.numero || "") + "_" + carimbo() + ".xlsx", b.dataset.m || "salvar"); return;
+    }
     case "csv": {
       const r = await entregarArquivo(MARCA_ARQ + "caderneta_pontos_" + carimbo() + ".csv", "﻿" + csvPontos(), "text/csv", "salvar");
       aviso(r === "cancelado" ? "Cancelado" : "Planilha gerada");
@@ -5214,6 +5438,7 @@ async function processarRecebido(d, nomeArq, silencioso){
     await fazerCopia("antes de receber campos do PC");
     if (up && !DB.usuario) { DB.usuario = up; extra += " Caderneta pareada com " + (up.nome || up.codigo) + " (" + up.codigo + ")."; }
     if (d.regras && typeof d.regras === "object" && !outro) { DB.regras = d.regras; aplicarRegras(DB.regras); }   /* v2.5: regras do PC */
+    if (d.licenca && typeof d.licenca === "object" && !outro) DB.licenca = d.licenca;                            /* v2.5: licença do PC */
     const r = receberPacote(d, up);
     { const seg = aplicarRecibo(d.recibo, up ? up.codigo : ""); if (seg) extra += " " + seg + (seg === 1 ? " inspeção confirmada" : " inspeções confirmadas") + " no PC."; }
     salvar();
@@ -5664,12 +5889,17 @@ function aoMudarReg(el){
 /* ---------------------------------------------------------------- Wi-Fi com o computador (v2.4) */
 /* O PC (Arquivo › Trocar com o celular pelo Wi-Fi) mostra um QR com o endereço e a senha de 10 min.
    Aqui: lê o QR (ou digita), manda o pacote e recebe o pacote de campos — o mesmo dos arquivos. */
-const WIFI = {senha:"", base:""};
+const WIFI = {senha:"", base:"", bases:[]};
 function lerEnderecoWifi(txt){
   const t = String(txt || "").trim();
-  const m = t.match(/^(https?:\/\/)?([0-9a-zA-Z.\-]+)(:\d+)?\/?(?:#s=(\d{6}))?(?:&k=([A-Za-z2-7]{52}))?/);
+  const m = t.match(/^(https?:\/\/)?([0-9a-zA-Z.\-]+)(:\d+)?\/?(?:#(.*))?$/);
   if (!m || !m[2]) return null;
-  return {base:(m[1] || "http://") + m[2] + (m[3] || ""), senha:m[4] || "", chave:m[5] || ""};
+  const q = new URLSearchParams(m[4] || "");
+  const s = q.get("s") || "", k = q.get("k") || "";
+  const base = (m[1] || "http://") + m[2] + (m[3] || "");
+  /* v2.5: o QR traz os outros IPs do PC (&i=a,b): o app testa todos (VPN, placa virtual, cabo + Wi-Fi) */
+  const outros = (q.get("i") || "").split(",").filter(ip => /^\d{1,3}(\.\d{1,3}){3}$/.test(ip)).map(ip => (m[1] || "http://") + ip + (m[3] || ""));
+  return {base:base, bases:[base].concat(outros.filter(b => b !== base)), senha:/^\d{6}$/.test(s) ? s : "", chave:/^[A-Za-z2-7]{52}$/.test(k) ? k : ""};
 }
 function secWifi(){
   const pend = inspsParaEnviar().length;
@@ -5680,7 +5910,8 @@ function secWifi(){
     '<div class="form"><div class="f"><label for="wifi-end">Endereço</label><input id="wifi-end" placeholder="http://192.168.0.10:51234" value="' + esc(WIFI.base || DB.cfg.wifiEnd || "") + '" inputmode="url"></div>' +
     '<div class="f"><label for="wifi-senha">Senha</label><input id="wifi-senha" inputmode="numeric" maxlength="6" placeholder="6 números" value="' + esc(WIFI.senha) + '"></div></div>' +
     '<div class="btns"><button class="btn pri" data-a="wifi-trocar">' + ico("dados") + " Trocar agora</button></div>" +
-    '<p class="peq mut" style="margin:0">No Android, aceite o acesso à rede local quando o Chrome pedir. No iPhone o Safari não deixa a troca direta: abra o endereço do PC no Safari e use a página dele.</p></div>');
+    '<p class="peq mut" style="margin:0">No Android, aceite o acesso à rede local quando o Chrome pedir. No iPhone o Safari não deixa a troca direta: abra o endereço do PC no Safari e use a página dele.</p>' +
+    '<p class="peq mut" style="margin:0">Sem rede que funcione? <b>Compartilhar arquivo</b> › Bluetooth ou Quick Share; no PC: <i>Menu › Trocar por Bluetooth ou Quick Share</i>.</p></div>');
 }
 async function lerQR(titulo){
   if (!("BarcodeDetector" in window) || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -5713,35 +5944,45 @@ async function lerQrWifi(){
   const e = lerEnderecoWifi(v);
   if (!e) { aviso("Esse QR não é o do Vana do computador"); return; }
   if (e.chave) await parearChave(e.chave);          /* v2.5: o QR da troca entrega a chave de proteção */
-  WIFI.base = e.base; WIFI.senha = e.senha; DB.cfg.wifiEnd = e.base; salvar(); render();
+  WIFI.base = e.base; WIFI.bases = e.bases; WIFI.senha = e.senha; DB.cfg.wifiEnd = e.base; salvar(); render();
   if (e.senha) await trocarWifi();
 }
-async function pedirWifi(caminho, init){
-  const url = WIFI.base + caminho + (caminho.indexOf("?") >= 0 ? "&" : "?") + "s=" + encodeURIComponent(WIFI.senha);
+async function pedirWifi(caminho, init, base, tempo){
+  base = base || WIFI.base;
+  const url = base + caminho + (caminho.indexOf("?") >= 0 ? "&" : "?") + "s=" + encodeURIComponent(WIFI.senha);
   /* Chrome (acesso à rede local): o endereço do PC é da rede local (192.168…, 10…, 172.16–31…)
-     ou do próprio aparelho (127…); o pedido diz qual é. Sem suporte, vai sem a indicação. */
-  const host = (WIFI.base.match(/^https?:\/\/([^:/]+)/) || [])[1] || "";
+     ou do próprio aparelho (127…); o pedido diz qual é — é isso que faz o Chrome PERGUNTAR
+     (sem a indicação, a página https é barrada calada, como "conteúdo misto"). */
+  const host = (base.match(/^https?:\/\/([^:/]+)/) || [])[1] || "";
   const espaco = /^(127\.|localhost$)/.test(host) ? "loopback"
     : /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.)/.test(host) ? "local" : "";
+  const ctl = tempo ? new AbortController() : null, t0 = Date.now();
+  const relogio = ctl ? setTimeout(() => ctl.abort(), tempo) : 0;
   let r;
   try {
-    try { r = await fetch(url, Object.assign(espaco ? {targetAddressSpace:espaco} : {}, {cache:"no-store"}, init || {})); }
-    catch (e) { if (!espaco) throw e; r = await fetch(url, Object.assign({cache:"no-store"}, init || {})); }
+    const op = Object.assign(espaco ? {targetAddressSpace:espaco} : {}, {cache:"no-store"}, ctl ? {signal:ctl.signal} : {}, init || {});
+    try { r = await fetch(url, op); }
+    catch (e) { if (!espaco || (e && e.name === "AbortError")) throw e; delete op.targetAddressSpace; r = await fetch(url, op); }
   }
-  catch (e) { throw new Error("Não consegui falar com o computador. Confira se estão no mesmo Wi-Fi, se a janela do Wi-Fi está aberta no PC e, no Android, se o acesso à rede local foi permitido."); }
+  catch (e) {
+    const x = new Error("Não consegui falar com o computador.");
+    x.falha = e && e.name === "AbortError" ? "tempo" : (Date.now() - t0 < 1500 ? "barrado" : "rede");
+    throw x;
+  }
+  finally { if (relogio) clearTimeout(relogio); }
   let j = null; try { j = await r.json(); } catch (e) {}
   if (!r.ok || !j || j.ok === false) throw new Error((j && j.erro) || ("O computador respondeu " + r.status));
   return j;
 }
 async function trocarWifi(){
   const ei = document.getElementById("wifi-end"), si = document.getElementById("wifi-senha");
-  if (ei && ei.value.trim()) { const e = lerEnderecoWifi(ei.value); if (e) { WIFI.base = e.base; if (e.senha) WIFI.senha = e.senha; } }
+  if (ei && ei.value.trim()) { const e = lerEnderecoWifi(ei.value); if (e) { if (e.base !== WIFI.base) WIFI.bases = e.bases; WIFI.base = e.base; if (e.senha) WIFI.senha = e.senha; } }
   if (si && si.value.trim()) WIFI.senha = si.value.trim();
   if (!WIFI.base || !/^\d{6}$/.test(WIFI.senha)) { aviso("Informe o endereço e a senha de 6 números que aparecem no PC (ou leia o QR)"); return; }
   DB.cfg.wifiEnd = WIFI.base; salvar();
   aviso("Conectando ao computador…", null, 20000);
   try {
-    const ola = await pedirWifi("/vana/ola");
+    const ola = await acharPC();
     if (!!ola.teste !== !!TESTE) throw new Error(ola.teste ? "O programa do PC está em MODO TESTE e esta Caderneta é a de uso real." : "Esta é a Caderneta de TESTE e o programa do PC está no uso real.");
     const novas = inspsParaEnviar(), pac = pacoteParaPC(novas.length > 0);
     let txtEnv = "nada novo para enviar";
@@ -5759,8 +6000,61 @@ async function trocarWifi(){
     dialogo({titulo:"Troca pelo Wi-Fi feita", texto:txtEnv + ". " + (r || "Campos, agenda e recibo recebidos.")});
   } catch (e) {
     const av = document.querySelector(".aviso"); if (av) av.remove();
+    if (e && e.diag) return falhaWifi(e.diag);
     dialogo({titulo:"Troca pelo Wi-Fi não deu certo", texto:(e && e.message) || String(e)});
   }
+}
+/* v2.5: testa todos os endereços do PC ao mesmo tempo; o primeiro que responde é o certo.
+   Se nenhum responde, junta o que se sabe para dizer ONDE está o bloqueio. */
+async function permissaoRedeLocal(){
+  for (const nome of ["local-network", "local-network-access"]) {
+    try { const s = await navigator.permissions.query({name:nome}); return s.state; } catch (e) {}
+  }
+  return "";
+}
+async function acharPC(){
+  const bases = (WIFI.bases && WIFI.bases.length ? WIFI.bases : [WIFI.base]).filter(Boolean);
+  if (WIFI.base && bases.indexOf(WIFI.base) < 0) bases.unshift(WIFI.base);
+  const falhas = [];
+  const tentativas = bases.map(b => pedirWifi("/vana/ola", null, b, 6000).then(j => ({b, j}), e => {
+    if (e && e.falha) { falhas.push({b, falha:e.falha}); throw e; }
+    throw Object.assign(e || new Error("?"), {respondeu:true, b});     /* o PC respondeu (senha vencida etc.) */
+  }));
+  try {
+    const {b, j} = await Promise.any(tentativas);
+    WIFI.base = b; DB.cfg.wifiEnd = b;
+    return j;
+  } catch (agg) {
+    const errs = (agg && agg.errors) || [];
+    const respondeu = errs.find(x => x && x.respondeu);
+    if (respondeu) throw respondeu;                                     /* falou com o PC: a mensagem dele vale */
+    const perm = await permissaoRedeLocal();
+    const err = new Error("Não consegui falar com o computador.");
+    err.diag = {bases, falhas, perm, lna: "targetAddressSpace" in Request.prototype || perm !== ""};
+    throw err;
+  }
+}
+function falhaWifi(d){
+  const tudoTempo = d.falhas.length && d.falhas.every(f => f.falha === "tempo" || f.falha === "rede");
+  let html = "";
+  if (d.perm === "denied") {
+    html = "<p><b>O Chrome está bloqueando o acesso à rede local para a Caderneta.</b></p><p>Libere assim: Chrome › ⋮ › Configurações › Configurações do site › <b>Acesso à rede local</b> (ou Todos os sites › o endereço da Caderneta) › <b>Permitir</b>. Depois feche e abra a Caderneta.</p>";
+  } else if (tudoTempo) {
+    html = "<p><b>O pedido saiu do celular, mas o computador não respondeu.</b> O app não é o problema: algo no caminho está barrando.</p>" +
+      "<p>1. Veja na janela do Wi-Fi do PC se apareceu <i>“O celular chegou ao PC”</i>. Se não: clique em <b>Liberar no firewall do Windows</b> nessa janela.</p>" +
+      "<p>2. Wi-Fi de visitante e de empresa costumam isolar os aparelhos. Ligue o <b>roteador do celular</b> e conecte o PC nele.</p>" +
+      "<p>3. Sem rede que funcione: use <b>Compartilhar arquivo</b> (WhatsApp, e-mail, Bluetooth ou Quick Share).</p>";
+  } else if (d.perm === "granted") {
+    html = "<p><b>O PC recusou a conexão.</b> Confira se a janela do Wi-Fi está aberta no PC e leia o QR de novo (o endereço e a senha mudam a cada vez).</p>";
+  } else {
+    html = "<p><b>O navegador barrou o pedido antes de sair.</b></p><p>" + (d.lna ? "Quando o Chrome perguntar sobre <b>dispositivos da rede local</b>, toque em Permitir. Se não perguntou: Chrome › ⋮ › Configurações › Configurações do site › Acesso à rede local." :
+      "Este navegador não deixa um app https falar com o PC. Atualize o Chrome, ou use a página do PC abaixo.") + "</p>";
+  }
+  html += '<p class="peq mut">Teste: abra a página do PC no navegador. Se ela também não abrir, é a rede ou o firewall do PC. Endereços tentados: ' + d.bases.map(esc).join(" · ") + "</p>";
+  return dialogo({titulo:"Troca pelo Wi-Fi não deu certo", html:html,
+    botoes:[{rotulo:"Abrir a página do PC", valor:"pagina"}, {rotulo:"OK", valor:true, classe:"pri"}]}).then(v => {
+      if (v === "pagina") window.open(d.bases[0] + "/#s=" + encodeURIComponent(WIFI.senha), "_blank", "noopener");
+    });
 }
 
 /* ---------------------------------------------------------------- glebas (v2.4) */
