@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-CcnYeomdIFVurUPHsl45lroJQFfdX4KnA7fdvvndeXM='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src 'self' http: https://server.arcgisonline.com; font-src 'self'; worker-src 'self'; manifest-src 'self'; media-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-ZFeDvjePKUGXzeuYi7eX2iSd6U/2Zep+RNBO8ugQg7s='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src 'self' http: https://server.arcgisonline.com; font-src 'self'; worker-src 'self'; manifest-src 'self'; media-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#FFFFFF">
 <meta name="mobile-web-app-capable" content="yes">
@@ -187,6 +187,9 @@ button.link{background:none;border:0;padding:0;font:inherit;color:var(--azul);te
 .seg{display:inline-flex;border:1px solid var(--linha2);border-radius:11px;overflow:hidden;background:var(--sup3)}
 .seg button{border:0;background:none;padding:0 13px;min-height:40px;cursor:pointer;font-family:var(--f-titulo);font-weight:600;font-size:14.5px;color:var(--tinta2)}
 .seg button[aria-pressed="true"]{background:var(--azul);color:var(--sobre-azul)}
+.seg.regioes{align-self:flex-start;max-width:100%;overflow-x:auto}
+ol.passos{margin:0;padding-left:20px;line-height:1.55;color:var(--tinta2)}ol.passos li{margin:0 0 4px}
+.seg.regioes .n{font-weight:500;opacity:.75;font-size:13px;margin-left:2px}
 .frases{display:flex;flex-wrap:wrap;gap:7px}
 .frases button{border:1px dashed var(--linha2);background:var(--sup3);border-radius:999px;padding:6px 12px;font-size:13px;cursor:pointer;color:var(--tinta2)}
 .tab-copiar{padding:8px 12px 12px;gap:8px}
@@ -1093,7 +1096,7 @@ const CFG_PADRAO = {
   gpsLigado:true, gpsTrilha:true, gpsPrecisao:30,
   msgDecimal:".", msgMaiusculas:true, msgRecomendacao:"risco", msgProxima:false,
   ultimoEnvio:0, ultimaCopiaArq:0,
-  nomeAparelho:"", pinMin:15
+  nomeAparelho:"", pinMin:15, regiao:""
 };
 
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
@@ -1852,6 +1855,44 @@ function etqEnvio(i){
        : e === "enviada" ? '<span class="etq">enviada</span>' : '<span class="etq envio">só no celular</span>';
 }
 /* Recibo do PC: [{id, alterado}] = as inspeções (e a versão de cada uma) que o computador já tem. */
+/* v2.5: inspeções completadas/corrigidas no PC voltam para cá (antes só vinha o resumo e os pontos
+   lançados no PC não apareciam). Inspeção que NÃO foi mexida aqui depois do envio: fica igual à do PC.
+   Mexida aqui também: junta — os pontos já contados aqui ficam, os vazios recebem os do PC — e ela
+   volta a ficar "para enviar", para o PC receber a versão juntada. */
+function pontoIgual(a, b, ppp){
+  const ca = (a && a.c) || {}, cb = (b && b.c) || {};
+  const ks = new Set(Object.keys(ca).concat(Object.keys(cb)));
+  for (const k of ks) if (num(ca[k]) !== num(cb[k])) return false;
+  /* "avaliadas" vazio = o padrão de plantas por ponto do campo */
+  return !!(a && a.feito) === !!(b && b.feito) && (!b.feito || (num(a.avaliadas) || ppp) === (num(b.avaliadas) || ppp));
+}
+function aplicarEdicoesPC(lista){
+  const r = {atualizadas:0, juntadas:0};
+  (Array.isArray(lista) ? lista : []).forEach(e => {
+    const i = inspPor(String(e && e.id)); if (!i || !Array.isArray(e.pontos)) return;
+    if (e.versao && i.pcVersao === e.versao) return;                      /* já aplicada */
+    const mexidaAqui = (i.alterado || 0) > num(e.alterado);
+    const velhos = i.pontos || [], ppp = pppDo(campoPor(i.campoId));
+    let mudou = false;
+    const novos = e.pontos.map((p, k) => {
+      const v = velhos[k];
+      if (v && v.feito && (mexidaAqui || pontoIgual(v, p, ppp))) return v;     /* o contado aqui fica (com GPS, hora, fotos) */
+      if (!p.feito && v) return v;
+      mudou = true;
+      return Object.assign(novoPonto(k + 1), {id:v ? v.id : uid(), avaliadas:p.avaliadas == null ? null : num(p.avaliadas), c:Object.assign({}, p.c || {}),
+        feito:!!p.feito, gps:p.gps || (v && v.gps) || null, t:num(p.t) || (v ? num(v.t) : 0), obs:v ? v.obs || "" : "", doPC:true});
+    });
+    for (let k = e.pontos.length; k < velhos.length; k++) if (velhos[k] && velhos[k].feito) novos.push(velhos[k]);   /* não perde ponto contado aqui */
+    if (!mexidaAqui && e.caminhamento && JSON.stringify(e.caminhamento) !== JSON.stringify(i.caminhamento || {})) { i.caminhamento = Object.assign({}, i.caminhamento || {}, e.caminhamento); mudou = true; }
+    if (!mexidaAqui && e.estigmaSeco !== "" && e.estigmaSeco != null && num(e.estigmaSeco) !== num(i.estigmaSeco)) { i.estigmaSeco = e.estigmaSeco; mudou = true; }
+    i.pcVersao = e.versao || "";
+    if (!mudou) return;
+    i.pontos = novos;
+    if (mexidaAqui) { tocar(i); r.juntadas++; }        /* volta a ir para o PC, já juntada */
+    else { i.seguroPC = Math.max(i.seguroPC || 0, i.alterado || 0); r.atualizadas++; }
+  });
+  return r;
+}
 function aplicarRecibo(lista, deQuem){
   let n = 0;
   const meu = DB.usuario ? DB.usuario.codigo : "";
@@ -3579,6 +3620,8 @@ function telaCampos(){
   const peso = c => { const a = AG[c.id]; return !a ? 3 : a.tipo === "atrasada" ? 0 : a.tipo === "hoje" ? 1 : a.tipo === "feita" ? 2 : 3; };
   let lista = DB.campos.slice().sort((a, b) => peso(a) - peso(b) || ativ(b) - ativ(a));
   if (q) lista = lista.filter(c => semAcento([c.codigo, c.gleba, c.fazenda, c.hibrido, c.cooperante, c.municipio, c.pivo].join(" ")).toLowerCase().indexOf(q) >= 0);
+  const reg = regiaoSel();
+  if (reg) lista = lista.filter(c => regiaoDe(c.codigo) === reg);
   const pend = inspsParaEnviar().length;
   const nHoje = DB.campos.filter(c => AG[c.id] && (AG[c.id].tipo === "hoje" || AG[c.id].tipo === "atrasada")).length;
   let h = '<div class="cab"><div class="cresce"><h2>Campos</h2><div class="sub">' + DB.campos.length + " campo(s) · " + DB.inspecoes.length + " inspeção(ões) neste aparelho" +
@@ -3587,11 +3630,12 @@ function telaCampos(){
   if (pend) h += '<div class="nota alerta linha"><span class="cresce"><b>' + pend + (pend === 1 ? " inspeção ainda não foi" : " inspeções ainda não foram") + "</b> para o computador.</span>" +
                  '<button class="btn peq" data-a="ir" data-para="dados">' + ico("compartilhar") + " Enviar</button></div>";
   h += '<div class="btns"><button class="btn pri" data-a="novo-campo">' + ico("mais") + ' Novo campo</button><button class="btn" data-a="receber">' + ico("receber") + " Receber do PC</button></div>";
+  h += htmlRegioes();
   if (DB.campos.length > 5) h += '<div class="busca">' + ico("busca") + '<input id="busca" type="search" placeholder="Buscar contrato, fazenda, híbrido…" value="' + esc(S.busca) + '" autocomplete="off"></div>';
   if (!DB.campos.length) {
     h += '<div class="cartao"><div class="vazio"><h3>Nenhum campo ainda</h3><p>Receba os campos do programa do computador (com área, híbrido e limite do pivô) ou crie um campo aqui mesmo.</p></div></div>';
   } else if (!lista.length) {
-    h += '<p class="mut">Nenhum campo com “' + esc(S.busca) + '”.</p>';
+    h += '<p class="mut">Nenhum campo' + (S.busca ? " com “" + esc(S.busca) + "”" : "") + (reg ? " na região " + esc(reg) : "") + ".</p>";
   } else {
     h += '<div class="lista">';
     lista.forEach(c => {
@@ -4200,6 +4244,25 @@ function tabelaPorPonto(i, c){
   return h + "</tbody></table></div>";
 }
 
+/* v2.5: troca pela pasta da nuvem (Drive / OneDrive) — o PC grava o campos_para_caderneta.vana.json
+   lá ao clicar em ⟳ Nuvem; o celular manda o arquivo dele para a mesma pasta e abre o do PC. */
+function secNuvem(nPend){
+  const ni = DB.nuvemInfo || {}, pasta = ni.pasta || "", arq = ni.arquivo || ((TESTE ? "TESTE_" : "") + "campos_para_caderneta.vana.json");
+  const up = DB.ultimoPacote;
+  const podeShare = podeCompartilharArquivo() && !emVisualizador();
+  const corpo = '<div class="pilha" style="gap:10px">' +
+    '<div class="nota">' + (pasta ? "O PC usa a pasta <b>" + esc(pasta) + "</b> na nuvem." : "No PC: <i>Menu › Pasta de troca na nuvem</i> escolhe a pasta (a mesma que o Drive ou o OneDrive do celular enxerga).") +
+    (up ? "<br>Último arquivo do PC aberto aqui: gerado " + esc(String(up.gerado || "").replace("T", " às ").slice(0, 19)) + ", aberto " + quandoTxt(up.em) + "." : "") + "</div>" +
+    '<ol class="passos peq">' +
+    "<li><b>Mandar</b> as inspeções: <i>Compartilhar arquivo</i> › Drive (ou OneDrive) › pasta " + (pasta ? "<b>" + esc(pasta) + "</b>" : "de troca") + ".</li>" +
+    "<li>No PC: clique em <b>⟳ Nuvem</b>. Ele importa o que chegou e <b>regrava</b> o arquivo para o celular (com o que você completou no PC).</li>" +
+    "<li><b>Receber</b>: espere o Drive sincronizar (1 a 2 min) e abra o <span class=\"mono\">" + esc(arq) + "</span> pela <b>pasta</b> (não por “Recentes”, que pode mostrar a versão velha).</li></ol>" +
+    '<div class="btns">' + (podeShare ? '<button class="btn' + (nPend ? " pri" : "") + '" data-a="enviar" data-m="compartilhar" data-q="' + (nPend ? "novas" : "tudo") + '">' + ico("compartilhar") + " 1. Mandar para a nuvem</button>" : "") +
+    '<button class="btn' + (nPend ? "" : " pri") + '" data-a="receber">' + ico("receber") + " 3. Abrir o arquivo do PC</button></div>" +
+    '<p class="peq mut" style="margin:0">Se o arquivo aberto for o mesmo da última vez, a Caderneta avisa: o PC ainda não regravou ou o Drive ainda não sincronizou.</p></div>';
+  return sec("sec-nuvem", "Pasta da nuvem (Drive, OneDrive)", pasta || "pelo arquivo", corpo);
+}
+
 /* ================================================================= DADOS */
 function telaDados(){
   const pend = inspsParaEnviar();
@@ -4227,6 +4290,7 @@ function telaDados(){
     "<p style=\"margin:0\"><b>No Vana do computador:</b> menu <i>Arquivo › Importar contagens…</i> e escolha o .json. Inspeções que você corrigir no celular e mandar de novo são atualizadas lá.</p></div></details>";
   env += "</div>";
   h += sec("sec-enviar", "Enviar para o computador", pend.length ? pend.length + " para enviar" : "em dia", env, {aberto:true});
+  h += secNuvem(pend.length);
   h += secWifi();
   h += sec("sec-receber", "Receber do computador", "", '<div class="pilha" style="gap:10px"><p class="peq" style="margin:0;color:var(--tinta2)">No programa do PC use <i>Arquivo › Enviar campos para a Caderneta…</i>: vem a lista de campos com área, híbrido, RC, o limite do pivô/gleba e as contagens anteriores (para a fase da curva). Também abre aqui uma cópia de segurança da Caderneta (.json).</p>' +
     '<div class="btns"><button class="btn pri" data-a="receber">' + ico("receber") + " Abrir arquivo (.json)</button></div></div>");
@@ -5169,6 +5233,7 @@ async function acao(a, b, id){
     case "ir-ajustes": return ir("ajustes");
     case "wifi-trocar": return trocarWifi();
     case "ag-filtro": S.agFiltro = b.dataset.v; render(); return;
+    case "regiao": DB.cfg.regiao = b.dataset.v || ""; salvar(); render(); return;
     case "ag-colheita": return ir("colheita", {colTarefa:id});
     case "col-lancar": return colLancar();
     case "col-excluir": { if (await confirmar("Excluir este dia?", "O registro do dia sai da colheita (no PC também, no próximo envio).", "Excluir", true)) colExcluir(id); return; }
@@ -5492,10 +5557,12 @@ async function enviarAoPC(modo){
 
 /* ---------------------------------------------------------------- receber */
 async function receberArquivo(){
-  const arq = await escolherArquivo(".json,application/json,text/plain");
+  /* v2.5: sem filtro de tipo — o Drive/OneDrive entregam o .vana.json como "arquivo" (application/octet-stream)
+     e, com o filtro, ele aparecia cinza e não dava para escolher */
+  const arq = await escolherArquivo("");
   if (!arq) return;
   let d;
-  try { d = JSON.parse(await lerTexto(arq)); } catch (e) { aviso("Esse arquivo não é um .json válido"); return; }
+  try { d = JSON.parse(await lerTexto(arq)); } catch (e) { aviso("Esse arquivo não é do Vana (escolha o campos_para_caderneta.vana.json ou uma cópia da Caderneta)"); return; }
   return processarRecebido(d, arq.name || "arquivo");
 }
 /* v2.4: o que chegou do PC (arquivo ou Wi-Fi). silencioso = devolve o resumo em vez de mostrar */
@@ -5530,6 +5597,15 @@ async function processarRecebido(d, nomeArq, silencioso){
     if (d.licenca && typeof d.licenca === "object" && !outro) DB.licenca = d.licenca;                            /* v2.5: licença do PC */
     const r = receberPacote(d, up);
     { const seg = aplicarRecibo(d.recibo, up ? up.codigo : ""); if (seg) extra += " " + seg + (seg === 1 ? " inspeção confirmada" : " inspeções confirmadas") + " no PC."; }
+    if (!outro) {
+      const ed = aplicarEdicoesPC(d.edicoesPC);
+      if (ed.atualizadas) extra += " " + ed.atualizadas + (ed.atualizadas === 1 ? " inspeção completada no PC foi atualizada aqui." : " inspeções completadas no PC foram atualizadas aqui.");
+      if (ed.juntadas) extra += " " + ed.juntadas + (ed.juntadas === 1 ? " inspeção foi juntada com a do PC (mande de novo)." : " inspeções foram juntadas com as do PC (mande de novo).");
+      if (d.nuvem && typeof d.nuvem === "object") DB.nuvemInfo = {pasta:String(d.nuvem.pasta || ""), arquivo:String(d.nuvem.arquivo || "")};
+    }
+    if (d.gerado_em && DB.ultimoPacote && DB.ultimoPacote.gerado === d.gerado_em)          /* v2.5: arquivo velho da nuvem */
+      extra += " Atenção: este é o MESMO arquivo já recebido " + quandoTxt(DB.ultimoPacote.em) + ". No PC, clique em ⟳ Nuvem para regravá-lo e espere o Drive sincronizar.";
+    if (d.gerado_em) DB.ultimoPacote = {gerado:d.gerado_em, em:Date.now(), de:nomeArq || ""};
     salvar();
     const resumo = r.novos + " campo(s) novo(s), " + r.atualizados + " atualizado(s)" + (r.historico ? " e " + r.historico + " contagem(ns) anterior(es) para a fase da curva." : ".") +
       (r.agenda != null ? " Agenda: " + r.agenda + " tarefa(s)." : "") + extra;
@@ -5593,9 +5669,25 @@ function feitaDa(t){
   return inspsDoCampo(c.id).find(i => i.data === dia || (t.numero && num(i.numero) === num(t.numero) && i.data >= t.data)) || null;
 }
 function diaDaTarefa(t){ const h = hojeISO(); return t.data < h ? h : t.data; }
+/* v2.5: regiões (M2, M7…), pelo começo do código do contrato — como no programa do PC */
+function regiaoDe(cod){ const m = String(cod || "").match(/^\s*([A-Za-z]{1,3}\d{1,2})(?=[A-Za-z])/); return m ? m[1].toUpperCase() : ""; }
+function regioesCad(){
+  const por = {};
+  DB.campos.forEach(c => { if (c.exemplo) return; const r = regiaoDe(c.codigo); if (r) por[r] = (por[r] || 0) + 1; });
+  const chave = r => [r.replace(/\d/g, ""), num(r.replace(/\D/g, ""))];
+  return Object.keys(por).sort((a, b) => { const x = chave(a), y = chave(b); return x[0] < y[0] ? -1 : x[0] > y[0] ? 1 : x[1] - y[1]; }).map(r => ({r, n:por[r]}));
+}
+function regiaoSel(){ const r = DB.cfg.regiao || ""; return r && regioesCad().some(x => x.r === r) ? r : ""; }
+function naRegiao(cod){ const r = regiaoSel(); return !r || regiaoDe(cod) === r; }
+function htmlRegioes(){
+  const rs = regioesCad(); if (rs.length < 2) return "";
+  const sel = regiaoSel();
+  return '<div class="seg regioes" role="group" aria-label="Região">' + [{r:"", n:0}].concat(rs).map(x =>
+    '<button type="button" data-a="regiao" data-v="' + esc(x.r) + '" aria-pressed="' + (x.r === sel) + '">' + (x.r ? esc(x.r) + ' <span class="n">' + x.n + "</span>" : "Todas") + "</button>").join("") + "</div>";
+}
 function tarefasDoFiltro(f){
   const h = hojeISO(), am = somaDias(h, 1), fim = somaDias(h, 6);
-  return (DB.agenda || []).filter(t => {
+  return (DB.agenda || []).filter(t => naRegiao(t.contrato || t.codigo)).filter(t => {
     const d = diaDaTarefa(t);
     return f === "amanha" ? d === am : f === "semana" ? d <= fim : d === h;
   }).sort((a, b) => diaDaTarefa(a) < diaDaTarefa(b) ? -1 : diaDaTarefa(a) > diaDaTarefa(b) ? 1 : (a.ordem || 99) - (b.ordem || 99));
@@ -5605,6 +5697,7 @@ function telaAgenda(){
   let h = '<div class="cab"><div class="cresce"><h2>Agenda</h2><div class="sub">' +
     (info ? "Do computador, recebida " + quandoTxt(info.em) : "Ainda sem agenda do computador") + "</div></div></div>";
   h += '<div class="pilha">';
+  h += htmlRegioes();
   h += '<div class="seg" role="group" aria-label="Período">' + [["hoje", "Hoje"], ["amanha", "Amanhã"], ["semana", "Semana"]].map(([v, r]) =>
     '<button type="button" data-a="ag-filtro" data-v="' + v + '" aria-pressed="' + (f === v) + '">' + r + " (" + tarefasDoFiltro(v).length + ")</button>").join("") + "</div>";
   if (!info) h += '<div class="cartao"><div class="vazio"><h3>Sem agenda</h3><p>No computador: Arquivo › Enviar campos para a Caderneta (ou a pasta de troca). As tarefas de campo das safras em andamento vêm junto: as atrasadas e as dos próximos 14 dias.</p></div></div>';
