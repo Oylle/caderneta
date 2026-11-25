@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-ZFeDvjePKUGXzeuYi7eX2iSd6U/2Zep+RNBO8ugQg7s='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src 'self' http: https://server.arcgisonline.com; font-src 'self'; worker-src 'self'; manifest-src 'self'; media-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-9OsV6kYzz05kh7CM47cdd2s19zPqfjuRhnOlcgrVbl8='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src 'self' http: https://server.arcgisonline.com; font-src 'self'; worker-src 'self'; manifest-src 'self'; media-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#FFFFFF">
 <meta name="mobile-web-app-capable" content="yes">
@@ -189,6 +189,9 @@ button.link{background:none;border:0;padding:0;font:inherit;color:var(--azul);te
 .seg button[aria-pressed="true"]{background:var(--azul);color:var(--sobre-azul)}
 .seg.regioes{align-self:flex-start;max-width:100%;overflow-x:auto}
 ol.passos{margin:0;padding-left:20px;line-height:1.55;color:var(--tinta2)}ol.passos li{margin:0 0 4px}
+.qq{display:inline-grid;place-items:center;width:22px;height:22px;margin-left:4px;padding:0;border-radius:50%;border:1.5px solid currentColor;background:transparent;color:var(--azul);font:700 13px/1 var(--f-texto);cursor:pointer;vertical-align:1px}
+.risco .qq{color:inherit;opacity:.85}
+.explica p{margin:0 0 10px;line-height:1.55}.explica p:last-child{margin:0}
 .seg.regioes .n{font-weight:500;opacity:.75;font-size:13px;margin-left:2px}
 .frases{display:flex;flex-wrap:wrap;gap:7px}
 .frases button{border:1px dashed var(--linha2);background:var(--sup3);border-radius:999px;padding:6px 12px;font-size:13px;cursor:pointer;color:var(--tinta2)}
@@ -768,6 +771,53 @@ function notaCoincidencia(dias, lado){
   for (const [lim, nota, txt] of tab) if (dias <= lim) return [nota, txt];
   return [tab[tab.length - 1][1], tab[tab.length - 1][2]];
 }
+/* v2.5: o "porquê" de cada número (ícone ?) — a conta com os números deste campo/inspeção */
+const fx2 = (v, c) => v == null ? "—" : fmtPct(v, c == null ? 2 : c);
+function faixasTxt(lims, casas, rotulos){
+  return lims.map((l, j) => (j === lims.length - 1 && !isFinite(l) ? "acima de " + fmtPct(lims[j - 1], casas) : "até " + fmtPct(l, casas)) + " → " + rotulos[j]).join("; ");
+}
+function explicacao(k, X){
+  if (!temRegras()) return "<p>" + esc(SEM_REGRAS) + "</p>";
+  const p = s => "<p>" + s + "</p>";
+  if (k === "classe") {
+    const m = X, iF = m.ffp == null ? -1 : indice(m.ffp, CLASSES.map(c => c[1]), 2), iA = indice(m.atip || 0, CLASSES.map(c => c[2]), 3);
+    if (m.ffp == null) return p("Sem contagem: ainda não há pontos contados.");
+    return p("<b>P.P " + fx2(m.ffp) + "</b> → " + esc(CLASSES[iF][0]) + " (limites: " + CLASSES.slice(0, 3).map(c => fmtPct(c[1], 2)).join(" · ") + ").") +
+      p("<b>Atípicas polinizando " + fx2(m.atip || 0, 3) + "</b> → " + esc(CLASSES[iA][0]) + " (limites: " + CLASSES.slice(0, 3).map(c => fmtPct(c[2], 2)).join(" · ") + ").") +
+      p("Vale a pior das duas: <b>" + esc(CLASSES[Math.max(iF, iA)][0]) + "</b>. A P.P soma só os tipos que soltam pólen (POL); NPOL não entra." +
+        (m.er != null && ER_MINIMO != null && m.er < ER_MINIMO ? " Atenção: E.R. " + fx2(m.er) + " ainda abaixo de " + ER_MINIMO + "% (início das inspeções)." : ""));
+  }
+  if (k === "desp" || k === "atip") {
+    const ehD = k === "desp", v = ehD ? X.picoFfp : X.rogAtip, er = ehD ? X.picoErDia : X.rogEr, dia = ehD ? X.picoFfpData : X.rogData, nota = ehD ? X.notaDesp : X.notaRogue;
+    const linhas = ehD ? NOTA_DESP_LINHAS : NOTA_ATIP_LINHAS, tab = ehD ? NOTA_DESP : NOTA_ATIP;
+    if (v == null || er == null || !tab) return p("Ainda sem contagem com " + (ehD ? "P.P" : "atípicas") + " e E.R. no mesmo dia.");
+    const li = indice(v, linhas, 2), co = colunaER(er);
+    const colTxt = ["E.R. até " + fmtPct(NOTA_DESP_COLUNAS[0], 0), "E.R. de " + fmtPct(NOTA_DESP_COLUNAS[0] + 0.1, 1) + " a " + fmtPct(NOTA_DESP_COLUNAS[1], 0), "E.R. acima de " + fmtPct(NOTA_DESP_COLUNAS[1], 0)][co];
+    return p("Vale o dia com " + (ehD ? "a maior P.P" : "mais atípicas polinizando") + ": <b>" + dataBR(dia) + "</b>.") +
+      p((ehD ? "P.P " : "Atípicas ") + "<b>" + fx2(v, ehD ? 2 : 3) + "</b> → linha \"" + (li === linhas.length - 1 ? "acima de " + fmtPct(linhas[li - 1], 2) : "até " + fmtPct(linhas[li], 2)) + "\"; " +
+        "E.R. <b>" + fx2(er) + "</b> → coluna \"" + colTxt + "\".") +
+      p("Na tabela, essa linha × coluna dá <b>nota " + nota + "</b>. A linha da tabela: " + tab[li].map((n, j) => ["até " + fmtPct(NOTA_DESP_COLUNAS[0], 0), "até " + fmtPct(NOTA_DESP_COLUNAS[1], 0), "acima"][j] + " = " + n).join(" · ") + ".");
+  }
+  if (k === "coinc") {
+    if (X.coincTxt && X.notaCoinc == null) return p("Coincidência " + esc(X.coincTxt) + ". Ela mede quantos dias separam os 50% de E.R. (fêmea) dos 50% de pólen (macho); se um deles já estava acima de 50% na 1ª contagem, não dá para saber o dia.");
+    if (X.notaCoinc == null) return p("Ainda não dá para medir: falta o E.R. ou o pólen chegar a 50%. (" + (X.dataEr50 ? "E.R. 50% em " + dataBR(X.dataEr50) : "E.R. ainda < 50%") + "; " + (X.dataMp50 ? "pólen 50% em " + dataBR(X.dataMp50) : "pólen ainda < 50%") + ".)");
+    const tab = X.coincLado === "femea" ? COINC_FEMEA : COINC_POLINIZADOR, d = Math.abs(X.coincDias);
+    return p("E.R. (fêmea) chegou a 50% em <b>" + dataBR(X.dataEr50) + "</b>; o pólen do macho mais adiantado, em <b>" + dataBR(X.dataMp50) + "</b>. Quando os 50% caem entre duas inspeções, o dia é estimado pela reta entre elas.") +
+      p("Diferença: <b>" + d + (d === 1 ? " dia" : " dias") + "</b>, " + (X.coincLado === "femea" ? "a fêmea chegou primeiro (tabela da fêmea)" : "o macho chegou primeiro (tabela do polinizador)") + ": " +
+        tab.map(([lim, n, txt], j) => (isFinite(lim) ? "até " + lim + " d" : "mais") + " = " + n + " (" + txt + ")").join(" · ") + ".") +
+      p("Resultado: <b>nota " + X.notaCoinc + " — " + esc(X.coincTxt) + "</b>.");
+  }
+  if (k === "faixa") {
+    const ns = [["despendoamento", X.notaDesp], ["rogue/tiguera", X.notaRogue], ["coincidência", X.notaCoinc]];
+    return p("Entram as três notas: " + ns.map(([r, n]) => r + " <b>" + (n || "—") + "</b>").join(" · ") + ".") +
+      p("<b>Faixa Amarela</b> com uma nota 9 ou duas notas 5; senão <b>Livre</b>. Aqui: <b>" + esc(X.faixa) + "</b> (" + esc(X.faixaMotivo) + ").") +
+      p("O somatório por hectare (caminhamento + pontos) aparece no relatório, mas não compõe a faixa.");
+  }
+  return "";
+}
+function dlgExplica(k, X, titulo){
+  return dialogo({titulo:titulo || "Por quê?", html:'<div class="explica">' + explicacao(k, X) + "</div>", botoes:[{rotulo:"Entendi", valor:null, classe:"pri"}]});
+}
 function faixaQFS(notas){
   const ns = notas.filter(n => n);
   if (!ns.length) return ["Sem dados", "sem notas"];
@@ -1039,9 +1089,9 @@ function resumoCampo(serieTudo, area, nPlan){
   if (!ms.length) return R;
   R.pior = classePorNivel(Math.max.apply(null, ms.map(x => x.met.classe.nivel)));
   let pico = ms[0]; ms.forEach(x => { if ((x.met.ffp || 0) > (pico.met.ffp || 0)) pico = x; });
-  R.picoFfp = pico.met.ffp; R.picoFfpData = pico.data; R.notaDesp = pico.met.notaDesp;
+  R.picoFfp = pico.met.ffp; R.picoFfpData = pico.data; R.notaDesp = pico.met.notaDesp; R.picoErDia = pico.met.er;
   let rog = ms[0]; ms.forEach(x => { if ((x.met.atip || 0) > (rog.met.atip || 0)) rog = x; });
-  R.notaRogue = rog.met.notaAtip;
+  R.notaRogue = rog.met.notaAtip; R.rogAtip = rog.met.atip; R.rogEr = rog.met.er; R.rogData = rog.data;
   const ers = ms.map(x => x.met.er).filter(v => v != null);
   R.picoEr = ers.length ? Math.max.apply(null, ers) : null;
   R.dataEr50 = dataCruzou(ms, "ER"); R.dataMp50 = dataCruzou(ms, "MP");
@@ -1053,7 +1103,7 @@ function resumoCampo(serieTudo, area, nPlan){
                  " já com ≥ 50% na 1ª contagem";
   } else if (R.dataEr50 && R.dataMp50) {
     R.coincDias = diaNum(R.dataEr50) - diaNum(R.dataMp50);
-    const lado = R.dataEr50 <= R.dataMp50 ? "femea" : "polinizador";
+    const lado = R.dataEr50 <= R.dataMp50 ? "femea" : "polinizador"; R.coincLado = lado;
     const nc = notaCoincidencia(R.coincDias, lado); R.notaCoinc = nc[0]; R.coincTxt = nc[1];
   }
   const prs = ms.map(x => x.met.pt).filter(v => v);
@@ -1096,7 +1146,7 @@ const CFG_PADRAO = {
   gpsLigado:true, gpsTrilha:true, gpsPrecisao:30,
   msgDecimal:".", msgMaiusculas:true, msgRecomendacao:"risco", msgProxima:false,
   ultimoEnvio:0, ultimaCopiaArq:0,
-  nomeAparelho:"", pinMin:15, regiao:""
+  nomeAparelho:"", pinMin:15, regiao:"", pfArranjo:"lados"
 };
 
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
@@ -1160,6 +1210,58 @@ async function conferirAtualizacao(){
     }
     return {ok:true};
   } catch (e) { return {ok:false, motivo:"não deu para conferir agora (" + (e && e.message || e) + ")"}; }
+}
+
+/* v2.5 (item 8, DEMONSTRAÇÃO): licença de celular — o gerador da Orshu assina, a Caderneta confere
+   com a mesma chave pública das atualizações e passa a usar as regras de classificação que vêm
+   dentro dela, sem precisar do PC. */
+const FORMATO_LIC_CEL = "vana-licenca-celular";
+async function conferirLicencaCelular(env){
+  if (!criptoDisponivel()) return {erro:"Este navegador não confere assinaturas — abra a Caderneta pelo endereço https."};
+  try {
+    const pub = await crypto.subtle.importKey("raw", b64U8(CHAVE_ORSHU), {name:"ECDSA", namedCurve:"P-256"}, false, ["verify"]);
+    const ok = await crypto.subtle.verify({name:"ECDSA", hash:"SHA-256"}, pub, b64U8(env.assinatura || ""), new TextEncoder().encode(env.dados || ""));
+    if (!ok) return {erro:"A assinatura da licença NÃO confere: o arquivo foi alterado ou não é da Orshu."};
+    const d = JSON.parse(env.dados);
+    if (!d || d.tipo !== "licenca-celular") return {erro:"Este arquivo não é uma licença de celular do Vana."};
+    return {dados:d};
+  } catch (e) { return {erro:"Não deu para conferir a licença (" + (e && e.message || e) + ")"}; }
+}
+async function receberLicencaCelular(env, silencioso){
+  const r = await conferirLicencaCelular(env);
+  if (r.erro) { aviso(r.erro, null, 7000); return; }
+  const d = r.dados, u = d.usuario || {};
+  if (!d.valido_ate || hojeISO() > d.valido_ate) { aviso("Essa licença de celular venceu" + (d.valido_ate ? " em " + dataBR(d.valido_ate) : "") + ". Peça uma nova à Orshu.", null, 7000); return; }
+  let extra = "";
+  if (u.codigo && DB.usuario && DB.usuario.codigo !== u.codigo) {
+    const v = await dialogo({titulo:"Licença de outro usuário", texto:"A licença é de " + (u.nome || u.codigo) + " (" + u.codigo + "). Esta Caderneta é de " +
+      (DB.usuario.nome || DB.usuario.codigo) + " (" + DB.usuario.codigo + "). Passar a usar o usuário da licença? O que está aqui passa para ele.",
+      botoes:[{rotulo:"Cancelar", valor:null}, {rotulo:"Usar " + u.codigo, valor:"ok", classe:"pri"}]});
+    if (!v) return;
+    await fazerCopia("antes de trocar o usuário");
+    extra = " " + adotarUsuario({codigo:u.codigo, nome:u.nome || ""});
+  }
+  if (u.codigo && !DB.usuario) DB.usuario = {codigo:String(u.codigo), nome:String(u.nome || "")};
+  DB.licenca = {cliente:d.cliente || "", valido_ate:d.valido_ate, estado:"celular", em_dia:true, celular:true, demo:!!d.demo, id:d.id || "",
+    usuarios:u.codigo ? [{codigo:u.codigo, nome:u.nome || ""}] : []};
+  if (d.regras && typeof d.regras === "object") { DB.regras = d.regras; aplicarRegras(DB.regras); }
+  let rc = null;
+  if (Array.isArray(d.campos) && d.campos.length) rc = receberPacote({campos:d.campos}, null);
+  salvar();
+  const resumo = "Licença de celular" + (d.demo ? " (demonstração)" : "") + " de " + (d.cliente || "—") + ", válida até " + dataBR(d.valido_ate) +
+    ". Regras de classificação carregadas: a Caderneta já classifica sem o PC." + (rc ? " " + rc.novos + " campo(s) novo(s)." : "") + extra;
+  if (silencioso) return resumo;
+  render();
+  dialogo({titulo:"Licença instalada", texto:resumo});
+  return resumo;
+}
+async function abrirLicencaCelular(){
+  const arq = await escolherArquivo("");
+  if (!arq) return;
+  let d;
+  try { d = JSON.parse(await lerTexto(arq)); } catch (e) { aviso("Esse arquivo não é uma licença do Vana"); return; }
+  if (!d || d.formato !== FORMATO_LIC_CEL) { aviso("Esse arquivo não é uma licença de celular do Vana"); return; }
+  return receberLicencaCelular(d);
 }
 
 /* cripto.js */
@@ -2000,8 +2102,10 @@ function licencaEmDia(){
 function htmlLicenca(){
   const L = DB.licenca; if (!L) return "";
   const dias = L.valido_ate ? Math.round((new Date(L.valido_ate + "T12:00:00") - new Date(hojeISO() + "T12:00:00")) / 864e5) : null;
-  if (!licencaEmDia()) return '<div class="nota alerta"><b>Licença do Vana vencida.</b> Dá para ver e enviar o que já está aqui; para criar inspeções novas, renove no PC (Menu › Licença) e receba os campos de novo.</div>';
-  if (dias != null && dias <= 15) return '<div class="nota alerta"><b>' + (L.estado === "avaliacao" ? "Avaliação" : "A licença do Vana") + (dias >= 0 ? " termina em " + dias + " dia" + (dias === 1 ? "" : "s") : " venceu") + "</b> (" + dataBR(L.valido_ate) + "). Renove no PC (Menu › Licença).</div>";
+  const renove = L.celular ? "Peça uma nova licença de celular à Orshu (Ajustes › Licença)." : "Renove no PC (Menu › Licença).";
+  if (!licencaEmDia()) return '<div class="nota alerta"><b>Licença do Vana vencida.</b> Dá para ver e enviar o que já está aqui; para criar inspeções novas, ' +
+    (L.celular ? "abra uma licença de celular nova (Ajustes › Licença)." : "renove no PC (Menu › Licença) e receba os campos de novo.") + "</div>";
+  if (dias != null && dias <= 15) return '<div class="nota alerta"><b>' + (L.estado === "avaliacao" ? "Avaliação" : L.celular ? "A licença de celular" : "A licença do Vana") + (dias >= 0 ? " termina em " + dias + " dia" + (dias === 1 ? "" : "s") : " venceu") + "</b> (" + dataBR(L.valido_ate) + "). " + renove + "</div>";
   return "";
 }
 function htmlLembreteCopia(){
@@ -2243,8 +2347,8 @@ function htmlTrava(i){
   if (i.exemplo) return "";
   if (inspTravada(i)) return '<div class="nota trava"><span class="cresce">🔒 <b>Concluída e travada.</b> Para mudar algo, toque em Editar (o motivo fica registrado).</span>' +
     '<button class="btn peq" data-a="destravar" data-id="' + i.id + '">Editar</button></div>';
-  if (i.edicao) return '<div class="nota alerta trava"><span class="cresce">✎ <b>Editando</b> — motivo: ' + esc(i.edicao.motivo) + '. Trava de novo ao sair da inspeção.</span>' +
-    '<button class="btn peq" data-a="retravar" data-id="' + i.id + '">Pronto</button></div>';
+  if (i.edicao) return '<div class="nota alerta trava"><span class="cresce">✎ <b>Editando</b> — motivo: ' + esc(i.edicao.motivo) + '. Toque em Pronto para salvar e fechar.</span>' +
+    '<button class="btn peq pri" data-a="retravar" data-id="' + i.id + '">Pronto</button></div>';
   return "";
 }
 function htmlHistoricoInsp(i){
@@ -3024,6 +3128,7 @@ function mapaSVG(opc){
   (opc.trilha || []).forEach(t => todos.push({lat:t[0], lon:t[1]}));
   (opc.pontos || []).forEach(p => todos.push(p));
   (opc.marcas || []).forEach(p => todos.push(p));
+  (opc.fotos || []).forEach(p => todos.push(p));
   if (opc.eu && (!todos.length || opc.incluirEu)) todos.push(opc.eu);
   if (!todos.length) return "";
   const lat0 = todos.reduce((s, p) => s + p.lat, 0) / todos.length, lon0 = todos.reduce((s, p) => s + p.lon, 0) / todos.length;
@@ -3057,6 +3162,13 @@ function mapaSVG(opc){
   (opc.marcas || []).forEach(m => {
     const q = X(m.lat, m.lon);
     s += '<rect x="' + f(q[0] - 6) + '" y="' + f(q[1] - 6) + '" width="12" height="12" rx="2" fill="' + (m.pol ? "var(--r3f)" : "var(--polen-fill)") + '" stroke="var(--sup)" stroke-width="1.5"/>';
+  });
+  /* v2.5: fotos com GPS — alfinete com câmera (nº do ponto, ou C = caminhamento) */
+  (opc.fotos || []).forEach(ft => {
+    const q = X(ft.lat, ft.lon), x = f(q[0]), y = f(q[1]);
+    s += '<g transform="translate(' + x + "," + y + ')"><title>Foto' + (ft.ponto ? " do ponto " + ft.ponto : " do caminhamento") + "</title>" +
+      '<path d="M0 0 L-9 -14 A11 11 0 1 1 9 -14 Z" fill="var(--sup)" stroke="var(--tinta)" stroke-width="1.6"/>' +
+      '<rect x="-6.5" y="-23" width="13" height="9" rx="2" fill="var(--tinta)"/><circle cx="0" cy="-18.5" r="2.6" fill="var(--sup)"/></g>';
   });
   (opc.pontos || []).forEach(p => {
     const q = X(p.lat, p.lon);
@@ -3675,10 +3787,10 @@ function telaCampo(){
     h += '<div class="tiles">' +
       tile("F.F.P pico", pct(R.picoFfp), R.picoFfpData ? dataCurta(R.picoFfpData) : "") +
       tile("E.R. pico", pct(R.picoEr, 2), "") +
-      tile("Nota desp.", R.notaDesp || "—", "dia do pico de F.F.P") +
-      tile("Nota atíp.", R.notaRogue || "—", "rogue e tiguera") +
-      tile("Coincid.", R.notaCoinc || "—", R.coincTxt || (R.dataEr50 ? "E.R. 50% em " + dataCurta(R.dataEr50) : "E.R. e pólen ainda < 50%")) +
-      tile("Faixa", R.faixa, R.faixaMotivo) + "</div>";
+      tile("Nota desp.", R.notaDesp || "—", "dia do pico de P.P", "c-desp") +
+      tile("Nota atíp.", R.notaRogue || "—", "rogue e tiguera", "c-atip") +
+      tile("Coincid.", R.notaCoinc || "—", R.coincTxt || (R.dataEr50 ? "E.R. 50% em " + dataCurta(R.dataEr50) : "E.R. e pólen ainda < 50%"), "c-coinc") +
+      tile("Faixa", R.faixa, R.faixaMotivo, "c-faixa") + "</div>";
     if (R.fase) h += '<div class="peq mut">Fase: <b style="color:var(--tinta)">' + esc(R.fase.texto) + "</b>" + (R.fase.detalhe ? " · " + esc(R.fase.detalhe) : "") + "</div>";
     h += graficoCampo(serie) + "</div>";
   }
@@ -3710,10 +3822,14 @@ function telaCampo(){
   h += secGlebas(c);
   h += secRegistros(c);
   h += sec("sec-dados-campo", "Dados do campo", esc([c.safra ? (/^\d+$/.test(String(c.safra)) ? "VER " + c.safra : c.safra) : "", c.pivo ? "pivô " + c.pivo : "", c.proporcao].filter(Boolean).join(" · ")), formCampo(c), {aberto:!c.codigo});
-  h += '<div class="btns"><button class="btn perigo" data-a="excluir-campo" data-id="' + c.id + '">' + ico("lixo") + " Excluir campo</button></div>";
+  h += '<div class="btns">' + (c.exemplo ? "" : '<button class="btn" data-a="compartilhar-campos" data-id="' + c.id + '">' + ico("compartilhar") + " Compartilhar com colega</button>") +
+    '<button class="btn perigo" data-a="excluir-campo" data-id="' + c.id + '">' + ico("lixo") + " Excluir campo</button></div>";
   return h + "</div>";
 }
-function tile(k, v, n){ return '<div class="tile"><div class="k">' + esc(k) + '</div><div class="v">' + esc(v) + "</div>" + (n ? '<div class="n">' + esc(n) + "</div>" : "") + "</div>"; }
+function tile(k, v, n, explica){
+  return '<div class="tile"><div class="k">' + esc(k) + (explica ? ' <button type="button" class="qq" data-a="explica" data-k="' + explica + '" aria-label="Por que ' + esc(k) + " " + esc(v) + '?">?</button>' : "") +
+    '</div><div class="v">' + esc(v) + "</div>" + (n ? '<div class="n">' + esc(n) + "</div>" : "") + "</div>";
+}
 function graficoCampo(serie){
   const s = serie.filter(x => x.met.temDados);
   if (s.length < 2) return "";
@@ -3817,7 +3933,7 @@ function htmlRisco(ctx){
   MACHOS.forEach((k, j) => { if (m.pct[k] != null) partes.push("MP" + (j + 1) + " " + pct(m.pct[k], 2)); });
   partes.push(m.n + "/" + m.previstos + " pontos");
   if (m.temDados && ctx.fase && ctx.fase.codigo !== "sem") partes.push("fase: " + ctx.fase.texto.split(" —")[0].toLowerCase());
-  return '<div class="risco ' + cl.css + '" id="vivo"><div><div class="rotulo">Situação do campo</div><div class="classe">' + esc(cl.nome) + "</div></div>" +
+  return '<div class="risco ' + cl.css + '" id="vivo"><div><div class="rotulo">Situação do campo <button type="button" class="qq" data-a="explica" data-k="i-classe" aria-label="Por que ' + esc(cl.nome) + '?">?</button></div><div class="classe">' + esc(cl.nome) + "</div></div>" +
     '<div class="valor">' + (m.ffp == null ? "—" : fmtNum(m.ffp, 2)) + "<small>F.F.P %</small></div>" +
     '<div class="motivo">' + esc(partes.join(" · ")) + (m.atip ? " · atípicas POL " + pct(m.atip, 3) : "") + "</div></div>";
 }
@@ -3921,15 +4037,31 @@ function gruposAtipicas(ns, obj){
    continua aparecendo se tiver dado. */
 const PF_ANTIGO = [["er", "E.R. (antigo)"], ["m1a", "M1P-A (antigo)"], ["m2a", "M2P-A (antigo)"], ["m1b", "M1P-B (antigo)"], ["m2b", "M2P-B (antigo)"]];
 function pfTemDado(arr){ return Array.isArray(arr) && arr.some(x => x !== null && x !== "" && x !== undefined); }
+/* v2.5: arranjo "linhas" — Macho 1 linha 1 e 2, fêmeas, Macho 2 linha 1 e 2 (Ajustes › Preferências).
+   Contagem que já tem leitura num arranjo continua nele. */
+function pfArranjo(i){
+  const pf = i.pontoFixo || {}, ks = Object.keys(pf).filter(k => pfTemDado(pf[k]));
+  if (ks.some(k => /^M\dP-L\d$/.test(k))) return "linhas";
+  if (ks.some(k => /^M\dP-[AB]$/.test(k))) return "lados";
+  return DB.cfg.pfArranjo === "linhas" ? "linhas" : "lados";
+}
 function pfLinhas(i){
   const c = campoPor(i.campoId) || {}, pf = i.pontoFixo || {};
   let nf = Math.round(num(c.propF, 0)) || 5, nm = Math.round(num(c.machos, 2)) || 2;
   Object.keys(pf).forEach(k => {
     let m = /^F(\d)$/.exec(k); if (m && pfTemDado(pf[k])) nf = Math.max(nf, +m[1]);
-    m = /^M(\d)P-[AB]$/.exec(k); if (m && pfTemDado(pf[k])) nm = Math.max(nm, +m[1]);
+    m = /^M(\d)P-(?:[AB]|L\d)$/.exec(k); if (m && pfTemDado(pf[k])) nm = Math.max(nm, +m[1]);
   });
   nf = Math.max(1, Math.min(8, nf)); nm = Math.max(1, Math.min(3, nm));
   const L = [];
+  if (pfArranjo(i) === "linhas") {
+    const lin = j => { L.push(["M" + j + "P-L1", "Macho " + j + " L1", "m"]); L.push(["M" + j + "P-L2", "Macho " + j + " L2", "m"]); };
+    lin(1);
+    for (let j = 1; j <= nf; j++) L.push(["F" + j, "Fêmea " + j, "f"]);
+    for (let j = 2; j <= nm; j++) lin(j);
+    PF_ANTIGO.forEach(([k, rot]) => { if (pfTemDado(pf[k])) L.push([k, rot, "a"]); });
+    return L;
+  }
   for (let j = 1; j <= nm; j++) L.push(["M" + j + "P-A", "Macho " + j, "m"]);
   for (let j = 1; j <= nf; j++) L.push(["F" + j, "Fêmea " + j, "f"]);
   for (let j = 1; j <= nm; j++) L.push(["M" + j + "P-B", "Macho " + j, "m"]);
@@ -3942,7 +4074,7 @@ function pfGrupos(i){
   Object.keys(pf).forEach(k => {
     const vals = (Array.isArray(pf[k]) ? pf[k] : []).filter(x => x !== null && x !== "" && x !== undefined).map(x => num(x));
     if (/^F\d$/.test(k) || k === "er") g.fem.push.apply(g.fem, vals);
-    const m = /^M(\d)P-[AB]$/.exec(k) || /^m(\d)[ab]$/.exec(k); if (m && g["m" + m[1]]) g["m" + m[1]].push.apply(g["m" + m[1]], vals);
+    const m = /^M(\d)P-(?:[AB]|L\d)$/.exec(k) || /^m(\d)[ab]$/.exec(k); if (m && g["m" + m[1]]) g["m" + m[1]].push.apply(g["m" + m[1]], vals);
   });
   const med = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
   return {fem:med(g.fem), m1:med(g.m1), m2:med(g.m2), m3:med(g.m3)};
@@ -3997,7 +4129,7 @@ function pfMensagem(i, d){
     const vals = L.map(([k, rot]) => [rot, (pf[k] || [])[j]]);
     if (!vals.some(([, v]) => v !== null && v !== "" && v !== undefined)) continue;
     out.push("", "*REPETICAO " + (j + 1) + ":*");
-    vals.forEach(([rot, v]) => out.push(semAcento(rot) + ": " + (v === null || v === "" || v === undefined ? "-" : nMsg(num(v), 2, d))));
+    vals.forEach(([rot, v]) => out.push(semAcento(rot.replace(/ L(\d)$/, " linha $1")) + ": " + (v === null || v === "" || v === undefined ? "-" : nMsg(num(v), 2, d))));
   }
   return out.length ? ["", "*PONTO FIXO:*"].concat(out) : [];
 }
@@ -4113,7 +4245,8 @@ function dadosDoMapa(i, c){
   const pontos = i ? i.pontos.filter(p => p.gps).map(p => ({n:p.i, lat:p.gps.lat, lon:p.gps.lon, cls:polDoPonto(p) > 0 ? "r3" : "rn", sim:p.gps.fonte === "simulado"})) : [];
   const marcas = i ? i.marcas.map(m => ({lat:m.lat, lon:m.lon, pol:CH_P.concat(ATIP_POL).indexOf(m.k) >= 0})) : [];
   const prox = i ? i.pontos.findIndex(p => !pontoFeito(p)) : -1;
-  return {aneis:f ? f.aneis : null, plano, trilha:i ? i.trilha : [], pontos, marcas, eu:GPS.ult, alvoN:prox >= 0 ? prox + 1 : null, sim, forma:f};
+  const fotos = i ? (i.fotos || []).filter(ft => ft.lat != null && ft.lon != null).map(ft => ({lat:ft.lat, lon:ft.lon, ponto:ft.ponto})) : [];
+  return {aneis:f ? f.aneis : null, plano, trilha:i ? i.trilha : [], pontos, marcas, fotos, eu:GPS.ult, alvoN:prox >= 0 ? prox + 1 : null, sim, forma:f};
 }
 function htmlAlvo(i, d){
   if (!i || !d.plano || d.alvoN == null) return "";
@@ -4143,7 +4276,7 @@ function telaMapa(){
   h += '<div class="mapa" id="mapa-svg">' + (svg || '<div class="vazio"><h3>Nada para desenhar ainda</h3><p>Importe o limite do campo (KML) ou informe a coordenada do pivô e a área. Os pontos aparecem conforme o GPS grava cada um.</p></div>') + "</div>";
   h += '<div class="legenda"><span><i style="background:var(--azul)"></i>ponto contado</span><span><i style="background:var(--r3f)"></i>ponto com pendão polinizando</span>' +
     '<span><i style="background:transparent;border:2px dashed var(--azul)"></i>ponto sugerido</span><span><i style="background:var(--gps)"></i>você / trilha</span>' +
-    '<span><i style="background:var(--polen-fill);border-radius:2px"></i>planta do caminhamento</span></div>';
+    '<span><i style="background:var(--polen-fill);border-radius:2px"></i>planta do caminhamento</span><span><i style="background:var(--sup);border:2px solid var(--tinta);border-radius:50% 50% 50% 0"></i>foto (com GPS)</span></div>';
   if (d.sim && !(c && formaDoCampo(c))) h += '<div class="nota">Simulação num pivô imaginário. Com o limite do campo importado, a simulação anda pelo campo de verdade.</div>';
   if (d.plano && c) {
     const pl = d.plano, cb = cbDoCampo(c, i ? i.pontos.length : nPontosDoCampo(c));
@@ -4177,8 +4310,15 @@ function telaRel(){
   h += '<div class="pilha">' + htmlRisco(ctx);
   let t = '<div class="tiles">' + tile("E.R.", pct(m.er, 2), ctx.fase.codigo !== "sem" ? ctx.fase.texto.split(" —")[0] : "") + tile("P.T.", pct(m.pt, 2), PENDAO_TIRADO_META != null ? "meta " + fmtPct(PENDAO_TIRADO_META, 1) : "");
   MACHOS.forEach((k, j) => { if (m.pct[k] != null) t += tile("M.P." + (j + 1), pct(m.pct[k], 2), "macho " + (j + 1)); });
-  t += tile("Atíp. pol.", pct(m.atip, 3), "rogue + tiguera") + tile("Nota desp.", m.notaDesp || "—", "1 / 5 / 9") + tile("Nota atíp.", m.notaAtip || "—", "1 / 5 / 9") + "</div>";
+  t += tile("Atíp. pol.", pct(m.atip, 3), "rogue + tiguera") + tile("Nota desp.", m.notaDesp || "—", "1 / 5 / 9", "i-desp") + tile("Nota atíp.", m.notaAtip || "—", "1 / 5 / 9", "i-atip") + "</div>";
   h += t;
+  { /* v2.5: irregularidade a partir da contagem (modelo de isolamento, contaminante: plantas POL) */
+    const temPol = (m.ffp || 0) > 0 || (m.atip || 0) > 0 || isolamentoIrregular(i.isolamento);
+    const ja = (DB.registros || []).filter(r => r.deInsp === i.id).length;
+    if (!i.exemplo && (temPol || ja)) h += '<div class="nota' + (temPol && !ja ? " alerta" : "") + ' linha"><span class="cresce">' + (ja ? "Irregularidade criada a partir desta inspeção (" + ja + ")." :
+      "Plantas polinizando nesta inspeção: dá para abrir o relatório de irregularidade já preenchido.") + "</span>" +
+      '<button class="btn peq' + (ja ? "" : " pri") + '" data-a="irreg-da-insp">' + (ja ? "Abrir" : "Criar irregularidade") + "</button></div>";
+  }
   h += '<div class="cartao pad pilha" style="gap:10px"><div class="linha"><span class="rotulo cresce">Mensagem para a equipe</span></div><div class="msg" id="msg">' + esc(msg) + "</div>" +
     '<div class="btns"><button class="btn pri" data-a="copiar-msg">' + ico("copiar") + ' Copiar</button>' +
     (navigator.share && !emVisualizador() ? '<button class="btn" data-a="compartilhar-msg">' + ico("compartilhar") + " Compartilhar</button>" : "") +
@@ -4254,10 +4394,10 @@ function secNuvem(nPend){
     '<div class="nota">' + (pasta ? "O PC usa a pasta <b>" + esc(pasta) + "</b> na nuvem." : "No PC: <i>Menu › Pasta de troca na nuvem</i> escolhe a pasta (a mesma que o Drive ou o OneDrive do celular enxerga).") +
     (up ? "<br>Último arquivo do PC aberto aqui: gerado " + esc(String(up.gerado || "").replace("T", " às ").slice(0, 19)) + ", aberto " + quandoTxt(up.em) + "." : "") + "</div>" +
     '<ol class="passos peq">' +
-    "<li><b>Mandar</b> as inspeções: <i>Compartilhar arquivo</i> › Drive (ou OneDrive) › pasta " + (pasta ? "<b>" + esc(pasta) + "</b>" : "de troca") + ".</li>" +
+    "<li><b>Mandar</b> as inspeções: <i>Enviar arquivo</i> › Drive (ou OneDrive) › pasta " + (pasta ? "<b>" + esc(pasta) + "</b>" : "de troca") + ".</li>" +
     "<li>No PC: clique em <b>⟳ Nuvem</b>. Ele importa o que chegou e <b>regrava</b> o arquivo para o celular (com o que você completou no PC).</li>" +
     "<li><b>Receber</b>: espere o Drive sincronizar (1 a 2 min) e abra o <span class=\"mono\">" + esc(arq) + "</span> pela <b>pasta</b> (não por “Recentes”, que pode mostrar a versão velha).</li></ol>" +
-    '<div class="btns">' + (podeShare ? '<button class="btn' + (nPend ? " pri" : "") + '" data-a="enviar" data-m="compartilhar" data-q="' + (nPend ? "novas" : "tudo") + '">' + ico("compartilhar") + " 1. Mandar para a nuvem</button>" : "") +
+    '<div class="btns">' + (podeShare ? '<button class="btn' + (nPend ? " pri" : "") + '" data-a="enviar" data-m="auto">' + ico("compartilhar") + " 1. Enviar arquivo</button>" : "") +
     '<button class="btn' + (nPend ? "" : " pri") + '" data-a="receber">' + ico("receber") + " 3. Abrir o arquivo do PC</button></div>" +
     '<p class="peq mut" style="margin:0">Se o arquivo aberto for o mesmo da última vez, a Caderneta avisa: o PC ainda não regravou ou o Drive ainda não sincronizou.</p></div>';
   return sec("sec-nuvem", "Pasta da nuvem (Drive, OneDrive)", pasta || "pelo arquivo", corpo);
@@ -4276,22 +4416,26 @@ function telaDados(){
   if (aguard) env += '<div class="nota">' + aguard + (aguard === 1 ? " inspeção enviada aguarda" : " inspeções enviadas aguardam") +
     " o recibo do PC. O recibo vem no arquivo de campos do computador (<i>Receber do PC</i>).</div>";
   const podeShare = podeCompartilharArquivo() && !emVisualizador();
-  env += '<div class="btns">' +
-    (podeShare ? '<button class="btn pri" data-a="enviar" data-m="compartilhar" data-q="' + (pend.length ? "novas" : "tudo") + '">' + ico("compartilhar") + " Compartilhar arquivo</button>" : "") +
-    '<button class="btn' + (podeShare ? "" : " pri") + '" data-a="enviar" data-m="salvar" data-q="' + (pend.length ? "novas" : "tudo") + '">' + ico("baixar") + " Salvar no aparelho</button></div>";
+  /* v2.5: um botão só — "compartilhar", "salvar" e "nuvem" davam no mesmo arquivo; o celular
+     mostra para onde mandar (Drive/OneDrive = pasta da nuvem do PC, WhatsApp, Quick Share, Arquivos) */
+  env += '<div class="btns"><button class="btn pri grande" data-a="enviar" data-m="auto">' + ico(podeShare ? "compartilhar" : "baixar") + " Enviar arquivo</button></div>" +
+    '<p class="peq mut" style="margin:0">' + (podeShare ? "Escolha no celular para onde vai: <b>Drive/OneDrive</b> (a pasta da nuvem do PC), <b>WhatsApp</b>, <b>Quick Share</b> ou <b>Arquivos</b>. " +
+      '<button type="button" class="link" data-a="enviar" data-m="salvar">Só salvar em Downloads</button> (para o cabo USB).' : "O arquivo vai para Downloads; passe para o PC pelo cabo, e-mail ou nuvem.") + "</p>";
   if (reais.length && pend.length && pend.length < reais.length) env += '<label class="chk"><input type="checkbox" id="enviar-tudo"> <span>Mandar tudo (todas as ' + reais.length + " inspeções), não só as novas</span></label>";
   env += '<div class="nota' + (copiaAtrasada() ? " alerta" : "") + '"><b>Cópia de segurança</b> (fora do app): ' +
     (DB.cfg.ultimaCopiaArq ? "última " + quandoTxt(DB.cfg.ultimaCopiaArq) : "nenhuma ainda") + ". Para restaurar num celular novo, abra o arquivo em <i>Receber do PC</i>.</div>";
-  env += '<div class="btns"><button class="btn" data-a="copia">' + ico("baixar") + ' Salvar cópia de segurança</button><button class="btn" data-a="xlsx-tudo">' + ico("baixar") + ' Planilha Excel (.xlsx)</button><button class="btn peq" data-a="csv">' + ico("baixar") + " Planilha dos pontos (.csv)</button></div>";
+  env += '<div class="btns"><button class="btn" data-a="copia">' + ico("baixar") + ' Cópia de segurança completa</button><button class="btn" data-a="xlsx-tudo">' + ico("baixar") + ' Planilha Excel (.xlsx)</button><button class="btn peq" data-a="csv">' + ico("baixar") + " Planilha dos pontos (.csv)</button></div>";
   env += '<details class="sec" id="sec-como"' + aberto("sec-como") + '><summary><span class="st">Como passar para o computador</span></summary><div class="sec-c peq" style="color:var(--tinta2);line-height:1.6">' +
-    "<p style=\"margin:0 0 8px\"><b>Pelo WhatsApp ou e-mail:</b> toque em <i>Compartilhar arquivo</i> e mande para você mesmo. No computador, baixe o arquivo <span class=\"mono\">caderneta_….json</span>.</p>" +
-    "<p style=\"margin:0 0 8px\"><b>Android pelo cabo:</b> toque em <i>Salvar no aparelho</i> (vai para Downloads). Ligue o cabo, escolha <i>Transferência de arquivos</i> no celular e copie o arquivo da pasta Download.</p>" +
-    "<p style=\"margin:0 0 8px\"><b>iPhone:</b> <i>Compartilhar arquivo</i> › <i>Salvar em Arquivos</i>, ou AirDrop/e-mail para o computador.</p>" +
+    "<p style=\"margin:0 0 8px\"><b>Pela nuvem:</b> <i>Enviar arquivo</i> › Drive (ou OneDrive) › a pasta que o PC usa; no PC, clique em ⟳ Nuvem.</p>" +
+    "<p style=\"margin:0 0 8px\"><b>WhatsApp, e-mail ou Quick Share:</b> <i>Enviar arquivo</i> e mande para você mesmo/o PC. No computador, abra o arquivo <span class=\"mono\">caderneta_….vana.json</span>.</p>" +
+    "<p style=\"margin:0 0 8px\"><b>Pelo cabo (Android):</b> <i>Só salvar em Downloads</i>, ligue o cabo, escolha <i>Transferência de arquivos</i> e copie da pasta Download.</p>" +
     "<p style=\"margin:0\"><b>No Vana do computador:</b> menu <i>Arquivo › Importar contagens…</i> e escolha o .json. Inspeções que você corrigir no celular e mandar de novo são atualizadas lá.</p></div></details>";
   env += "</div>";
   h += sec("sec-enviar", "Enviar para o computador", pend.length ? pend.length + " para enviar" : "em dia", env, {aberto:true});
   h += secNuvem(pend.length);
   h += secWifi();
+  h += sec("sec-colega", "Compartilhar com outra Caderneta", "colega", '<div class="pilha" style="gap:10px"><p class="peq" style="margin:0;color:var(--tinta2)">Manda uma <b>cópia</b> de campos (e das inspeções deles) para o celular de um colega — por WhatsApp, Quick Share ou Drive. Lá: <i>Receber do computador › Abrir arquivo</i>. Se ele continuar uma inspeção sua e devolver, os pontos se juntam aqui.</p>' +
+    '<div class="btns"><button class="btn" data-a="compartilhar-campos">' + ico("compartilhar") + " Escolher campos e compartilhar</button></div></div>");
   h += sec("sec-receber", "Receber do computador", "", '<div class="pilha" style="gap:10px"><p class="peq" style="margin:0;color:var(--tinta2)">No programa do PC use <i>Arquivo › Enviar campos para a Caderneta…</i>: vem a lista de campos com área, híbrido, RC, o limite do pivô/gleba e as contagens anteriores (para a fase da curva). Também abre aqui uma cópia de segurança da Caderneta (.json).</p>' +
     '<div class="btns"><button class="btn pri" data-a="receber">' + ico("receber") + " Abrir arquivo (.json)</button></div></div>");
   h += sec("sec-copias", "Cópias de segurança", "automáticas", '<div id="lista-copias" class="pilha" style="gap:9px"><p class="peq mut" style="margin:0">Carregando…</p></div>');
@@ -4351,11 +4495,14 @@ function qrDeLinhas(linhas, tam){
 }
 function secLicenca(){
   const L = DB.licenca;
-  if (!L) return sec("sec-licenca", "Licença do Vana", "", '<p class="peq" style="margin:0;color:var(--tinta2)">A licença é do programa do PC. Receba os campos do computador para ver a situação e o pedido de licença.</p>', {aberto:false});
+  const btCel = '<div class="btns"><button class="btn" data-a="lic-celular">' + ico("receber") + " Abrir licença de celular</button></div>";
+  if (!L) return sec("sec-licenca", "Licença do Vana", "", '<div class="pilha" style="gap:10px"><p class="peq" style="margin:0;color:var(--tinta2)">A licença é do programa do PC. Receba os campos do computador para ver a situação e o pedido de licença. ' +
+    "Sem o PC: abra a <b>licença de celular</b> que a Orshu mandou (demonstração).</p>" + btCel + "</div>", {aberto:false});
   const vence = L.valido_ate ? dataBR(L.valido_ate) : "";
   const situ = !licencaEmDia() ? "vencida" : L.estado === "avaliacao" ? "avaliação até " + vence : vence ? "até " + vence : "sem prazo";
   const corpo = '<div class="pilha" style="gap:10px">' +
     (L.cliente ? '<p class="peq" style="margin:0"><b>' + esc(L.cliente) + "</b> · " + esc(situ) + "</p>" : "") +
+    (L.celular ? '<div class="nota">Licença <b>de celular</b>' + (L.demo ? " (demonstração)" : "") + " — a Caderneta usa as regras que vieram nela, sem o PC. Quando receber os campos de um PC licenciado, vale a licença dele.</div>" + btCel : "") +
     (L.pedido ? '<div class="lic-pedido">' + qrDeLinhas(L.qr || [], 150) + '<div class="pilha" style="gap:6px"><b>Pedido de licença</b>' +
       '<span class="peq" style="color:var(--tinta2)">Para pedir ou renovar: mostre este QR para quem gera a licença, ou mande o pedido pelo WhatsApp.</span>' +
       '<code class="lic-txt">' + esc(L.pedido) + '</code><div class="btns"><button class="btn pri" data-a="lic-pedido">Mandar o pedido</button></div></div></div>' : "") +
@@ -4446,7 +4593,8 @@ function htmlAjustes(){
     fChk("cfg.mostrarFP", "Mostrar F.P. (flor precoce) nos pontos", c.mostrarFP) +
     '<div class="form">' + fIn("cfg.representante", "Representante padrão (RC)", c.representante, {}) + fIn("cfg.at", "AT padrão", c.at, {}) +
     fIn("cfg.jaleco", "Nº do jaleco", c.jaleco, {}) + fIn("cfg.plantasPorPonto", "Plantas por ponto (novos campos)", c.plantasPorPonto, {t:"i"}) +
-    fIn("cfg.larguraBloco", "Largura do bloco (m)", c.larguraBloco, {t:"n"}) + fSel("cfg.machos", "Machos (novos campos)", [[1, "1"], [2, "2"], [3, "3"]], c.machos, {t:"i"}) + "</div>" +
+    fIn("cfg.larguraBloco", "Largura do bloco (m)", c.larguraBloco, {t:"n"}) + fSel("cfg.machos", "Machos (novos campos)", [[1, "1"], [2, "2"], [3, "3"]], c.machos, {t:"i"}) +
+    fSel("cfg.pfArranjo", "Arranjo do ponto fixo", [["lados", "Macho 1 e 2 dos dois lados"], ["linhas", "Macho 1 (L1, L2) · fêmeas · Macho 2 (L1, L2)"]], c.pfArranjo || "lados", {tudo:true}) + "</div>" +
     '<div class="rotulo">GPS</div>' + fChk("cfg.gpsLigado", "Ligar o GPS sozinho ao abrir uma inspeção", c.gpsLigado) +
     fChk("cfg.gpsTrilha", "Gravar a trilha andada", c.gpsTrilha) +
     '<div class="form">' + fIn("cfg.gpsPrecisao", "Precisão mínima da trilha (m)", c.gpsPrecisao, {t:"i"}) + "</div>" +
@@ -5378,6 +5526,8 @@ async function acao(a, b, id){
     case "pdf-arquivo": return pdfComFotos(b.dataset.m);
     case "enviar": return enviarAoPC(b.dataset.m);
     case "copia": return salvarCopia();
+    case "compartilhar-campos": return compartilharCampos(b.dataset.id);
+    case "lic-celular": return abrirLicencaCelular();
     case "copia-depois": DB.cfg.lembreteCopiaAte = Date.now() + 864e5; salvar(); render(); return;
     case "foto": { const al = alvoFotos(); if (!al) return; return tirarFoto(al, b.dataset.k === "" || b.dataset.k == null ? null : +b.dataset.k); }
     case "foto-excluir": {
@@ -5387,6 +5537,27 @@ async function acao(a, b, id){
     }
     case "reg-novo": { const c = campoAtual(); if (!c) return; const r = novoRegistro(b.dataset.t, c); DB.registros = DB.registros || []; DB.registros.push(r); salvar(); return ir("registro", {regId:r.id, campoId:c.id}); }
     case "reg-abrir": return ir("registro", {regId:id});
+    case "explica": {                   /* v2.5: ícone ? — a conta com os números daqui */
+      const k = b.dataset.k || "", tit = {desp:"Nota de despendoamento", atip:"Nota de rogue e tiguera", coinc:"Coincidência", faixa:"Faixa do campo (QFS)", classe:"Situação do campo"};
+      if (k.startsWith("c-")) {
+        const c = campoPor(S.campoId); if (!c) return;
+        const R = resumoCampo(serieDoCampo(c), c.area, num(c.nInspecoes) || null);
+        return dlgExplica(k.slice(2), R, tit[k.slice(2)] + " — " + nomeCampo(c));
+      }
+      const i = inspPor(S.inspId); if (!i) return;
+      const cc = campoPor(i.campoId) || {}, m = metricas(i, cc);
+      if (k === "i-classe") return dlgExplica("classe", m, "Situação do campo — inspeção nº " + i.numero);
+      const X = {picoFfp:m.ffp, picoErDia:m.er, picoFfpData:i.data, notaDesp:m.notaDesp, rogAtip:m.atip, rogEr:m.er, rogData:i.data, notaRogue:m.notaAtip};
+      return dlgExplica(k.slice(2), X, tit[k.slice(2)] + " — inspeção nº " + i.numero);
+    }
+    case "irreg-da-insp": {
+      const i = inspPor(S.inspId); if (!i) return;
+      const ja = (DB.registros || []).find(r => r.deInsp === i.id);
+      if (ja) return ir("registro", {regId:ja.id, campoId:i.campoId});
+      const r = irregDaInsp(i); DB.registros = DB.registros || []; DB.registros.push(r); salvar();
+      aviso("Irregularidade criada com os dados da inspeção — revise e mande para o PC");
+      return ir("registro", {regId:r.id, campoId:i.campoId});
+    }
     case "rg-op": { const r = regPor(S.regId); if (!r) return; const k = b.dataset.k, v = b.dataset.v; r.dados[k] = r.dados[k] === v ? "" : v; tocarReg(r); salvar(); render(); return; }
     case "rg-chip": {
       const r = regPor(S.regId); if (!r) return; const k = b.dataset.k, v = b.dataset.v;
@@ -5410,7 +5581,11 @@ async function acao(a, b, id){
       if (await destravar(x)) { if (S.tela === "campo") ir("insp", {inspId:x.id, campoId:x.campoId}); else render(); }
       return;
     }
-    case "retravar": { const x = inspPor(id) || i; retravar(x); render(); aviso("Inspeção travada de novo"); return; }
+    case "retravar": {                  /* v2.5: Pronto = trava de novo e fecha (volta para o campo) */
+      const x = inspPor(id) || inspPor(S.inspId); if (!x) return;
+      retravar(x); aviso("Edição concluída e salva — inspeção travada");
+      return ir("campo", {campoId:x.campoId});
+    }
     case "xlsx-tudo": {
       const reais = DB.inspecoes.filter(i => !i.exemplo);
       if (!reais.length) { aviso("Ainda não há inspeções (as de exemplo não entram)."); return; }
@@ -5547,12 +5722,127 @@ async function enviarAoPC(modo){
   const nome = MARCA_ARQ + "caderneta_" + carimbo() + ".vana.json";
   const texto = await textoProtegido(montarPacote(pac), true);           /* v2.5: protegido com a chave do PC */
   if (texto == null) { aviso("Envio cancelado"); return; }
+  if (modo === "auto") modo = podeCompartilharArquivo() && !emVisualizador() ? "compartilhar" : "salvar";
   const r = await entregarArquivo(nome, texto, "application/json", modo);
   if (r === "cancelado") { aviso("Envio cancelado"); return; }
   marcarEnviadas(pac.inspecoes);
   render();
   const txt = {compartilhado:"Arquivo compartilhado", baixado:"Arquivo salvo em Downloads", salvo:"Arquivo salvo", copiado:"Conteúdo copiado"}[r] || "Arquivo gerado";
   aviso(txt + " · " + pac.inspecoes.length + " inspeção(ões)");
+}
+
+/* ---------------------------------------------------------------- compartilhar (v2.5) */
+/* Item 1: mandar campos (e as inspeções deles) para a Caderneta de um colega. Vai uma CÓPIA:
+   quem recebe junta com o que tem — campo igual (mesmo id, ou mesmo contrato e gleba do mesmo
+   dono) não duplica, e inspeção igual (mesmo id) junta os pontos: o contado lá fica, o vazio
+   recebe o do arquivo. Inspeção recebida não vai para o PC de quem recebeu, a não ser que seja
+   continuada lá (aí ela volta a ficar "para enviar"). */
+async function compartilharCampos(idCampo){
+  const meus = DB.campos.filter(c => !c.exemplo);
+  if (!meus.length) { aviso("Ainda não há campos seus para compartilhar (os de exemplo não vão)"); return; }
+  const pre = idCampo || S.campoId || "";
+  const temChave = !!(chaveAtualU8() && criptoDisponivel());
+  const lista = meus.map(c => '<label class="chk"><input type="checkbox" class="cc-sel" value="' + esc(c.id) + '"' + (c.id === pre ? " checked" : "") + "> <span>" +
+    esc(nomeCampo(c)) + ' <span class="mut">· ' + inspsDoCampo(c.id).length + " insp.</span></span></label>").join("");
+  const r = await dialogo({titulo:"Compartilhar com outra Caderneta",
+    html:'<p class="peq" style="margin:0 0 8px">Vai uma <b>cópia</b> dos campos marcados. Na outra Caderneta: <i>Dados › Receber do computador › Abrir arquivo</i>.</p>' +
+      '<div class="pilha" style="gap:6px;max-height:42vh;overflow:auto">' + lista + "</div>" +
+      '<label class="chk" style="margin-top:8px"><input type="checkbox" id="cc-insp" checked> <span>Com as inspeções (pontos e fotos)</span></label>' +
+      (temChave ? '<label class="chk"><input type="checkbox" id="cc-prot" checked> <span>Proteger com a chave de proteção (o colega vai precisar da mesma chave para abrir)</span></label>' : ""),
+    botoes:[{rotulo:"Cancelar", valor:null}, {rotulo:"Compartilhar", valor:"ok", classe:"pri", coletar:veu => ({
+      ids:[].map.call(veu.querySelectorAll(".cc-sel:checked"), x => x.value), insp:!!veu.querySelector("#cc-insp").checked,
+      prot:!!(veu.querySelector("#cc-prot") || {}).checked})}]});
+  if (!r || !r.ids) return;
+  if (!r.ids.length) { aviso("Marque pelo menos um campo"); return; }
+  const pac = pacoteCompartilhado(r.ids, r.insp);
+  pac.fotos = await fotosDoPacote(pac.inspecoes);
+  const env = montarPacote(pac, "celular-para-celular");
+  const texto = r.prot && temChave ? JSON.stringify(await cifrarTexto(JSON.stringify(env), env.tipo, chaveAtualU8())) : JSON.stringify(env);
+  const nome = MARCA_ARQ + "compartilhado_" + carimbo() + ".vana.json";
+  const modo = podeCompartilharArquivo() && !emVisualizador() ? "compartilhar" : "salvar";
+  const e = await entregarArquivo(nome, texto, "application/json", modo);
+  if (e === "cancelado") { aviso("Compartilhamento cancelado"); return; }
+  aviso(pac.campos.length + (pac.campos.length === 1 ? " campo" : " campos") + " e " + pac.inspecoes.length +
+        (pac.inspecoes.length === 1 ? " inspeção" : " inspeções") + (e === "compartilhado" ? " compartilhados" : " salvos em arquivo"));
+}
+function pacoteCompartilhado(ids, comInsp){
+  const meu = DB.usuario ? DB.usuario.codigo : "", sel = new Set(ids);
+  const campos = DB.campos.filter(c => sel.has(c.id) && !c.exemplo).map(c => Object.assign(clone(c), {dono:c.dono || meu}));
+  const insps = comInsp ? DB.inspecoes.filter(i => sel.has(i.campoId) && !i.exemplo)
+    .map(i => Object.assign(clone(i), {dono:((campoPor(i.campoId) || {}).dono) || meu})) : [];
+  return {formato:FORMATO, versao:2, compartilhado:true, aparelho:DB.aparelho, usuario:DB.usuario,
+    deAparelho:nomeAparelho(), campos:campos, inspecoes:insps};
+}
+function juntarPontosInsp(local, vinda, ppp){
+  const velhos = local.pontos || [], novos = [];
+  let mudou = false;
+  const n = Math.max(velhos.length, (vinda.pontos || []).length);
+  for (let k = 0; k < n; k++) {
+    const v = velhos[k], p = (vinda.pontos || [])[k];
+    if (v && v.feito) { novos.push(v); continue; }                 /* o contado aqui fica */
+    if (p && p.feito) { novos.push(Object.assign({}, p, {c:Object.assign({}, p.c || {})})); mudou = true; continue; }
+    novos.push(v || Object.assign(novoPonto(k + 1), p || {}));
+    if (!v) mudou = true;
+  }
+  const idsF = new Set((local.fotos || []).map(f => f.id));
+  (vinda.fotos || []).forEach(f => { if (f && f.id && !idsF.has(f.id)) { (local.fotos = local.fotos || []).push(clone(f)); mudou = true; } });
+  if (mudou) local.pontos = novos;
+  return mudou;
+}
+function juntarCompartilhado(d){
+  const meu = DB.usuario ? DB.usuario.codigo : "";
+  const de = (d.usuario && d.usuario.codigo) ? String(d.usuario.codigo) : "";
+  const r = {campos:0, camposIguais:0, inspecoes:0, juntadas:0};
+  const mapaId = {};
+  (d.campos || []).map(normalizarCampo).forEach(c => {
+    if (!c.dono) c.dono = de || meu;
+    if (c.dono === meu) c.dono = "";                                   /* era meu: volta a ser meu */
+    let x = campoPor(c.id);
+    if (!x) x = DB.campos.find(y => !y.exemplo && normContrato(y.codigo) === normContrato(c.codigo) &&
+                                     normGleba(y.gleba) === normGleba(c.gleba) && (y.dono || "") === (c.dono || "")) || null;
+    if (x) { mapaId[c.id] = x.id; r.camposIguais++; return; }
+    DB.campos.push(c); mapaId[c.id] = c.id; r.campos++;
+  });
+  (d.inspecoes || []).map(normalizarInsp).forEach(i => {
+    i.campoId = mapaId[i.campoId] || i.campoId;
+    if (!campoPor(i.campoId)) return;
+    const x = inspPor(i.id);
+    if (!x) {
+      delete i.dono;
+      i.compartilhadaDe = de;
+      i.enviadoEm = 0;
+      const doCampo = campoPor(i.campoId), meuCampo = !doCampo.dono || doCampo.dono === meu;
+      /* campo meu: a inspeção que o colega fez nele vai para o meu PC. Campo de outro: não vai,
+         a não ser que eu a continue aqui. */
+      i.seguroPC = meuCampo ? 0 : (i.alterado || Date.now());
+      if (!meuCampo) i.travada = true;
+      DB.inspecoes.push(i); r.inspecoes++;
+      return;
+    }
+    if (juntarPontosInsp(x, i, pppDo(campoPor(x.campoId)))) { tocar(x); r.juntadas++; }
+  });
+  return r;
+}
+async function receberCompartilhado(d, nomeArq, silencioso){
+  const de = (d.usuario && d.usuario.codigo) ? (d.usuario.nome || d.usuario.codigo) + " (" + d.usuario.codigo + ")" : "outra Caderneta";
+  const nc = (d.campos || []).length, ni = (d.inspecoes || []).length;
+  if (!silencioso) {
+    const ok = await dialogo({titulo:"Campos compartilhados",
+      texto:de + (d.deAparelho ? " · " + d.deAparelho : "") + " mandou " + nc + (nc === 1 ? " campo" : " campos") + " e " + ni + (ni === 1 ? " inspeção" : " inspeções") +
+        ".\n\nÉ uma cópia: campo que já está aqui não duplica, e inspeção que já está aqui junta os pontos (o que você contou fica; os pontos vazios recebem os do arquivo).",
+      botoes:[{rotulo:"Cancelar", valor:null}, {rotulo:"Receber", valor:"ok", classe:"pri"}]});
+    if (!ok) return;
+  }
+  await fazerCopia("antes de receber campos compartilhados");
+  const r = juntarCompartilhado(d);
+  if (d.fotos) await gravarFotosRecebidas(d.fotos);
+  salvar();
+  const resumo = r.campos + (r.campos === 1 ? " campo novo" : " campos novos") + (r.camposIguais ? ", " + r.camposIguais + " já estava" + (r.camposIguais === 1 ? "" : "m") + " aqui" : "") + "; " +
+    r.inspecoes + (r.inspecoes === 1 ? " inspeção nova" : " inspeções novas") + (r.juntadas ? ", " + r.juntadas + (r.juntadas === 1 ? " juntada" : " juntadas") + " com a daqui" : "") + ".";
+  if (silencioso) return resumo;
+  PILHA.length = 0; ir("campos", null, {substituir:true});
+  dialogo({titulo:"Recebido de " + de, texto:resumo});
+  return resumo;
 }
 
 /* ---------------------------------------------------------------- receber */
@@ -5572,6 +5862,7 @@ async function processarRecebido(d, nomeArq, silencioso){
     if (txt == null) return;
     try { d = JSON.parse(txt); } catch (e) { aviso("O arquivo protegido não pôde ser lido"); return; }
   }
+  if (d && d.formato === FORMATO_LIC_CEL) return receberLicencaCelular(d, silencioso);     /* v2.5 item 8 (demo) */
   if (d && d.formato === FORMATO_VANA) {      /* v2.4: confere o pacote antes de usar qualquer coisa dele */
     const a = abrirPacote(d);
     if (a.erro) { aviso(a.erro, null, 7000); return; }
@@ -5614,6 +5905,7 @@ async function processarRecebido(d, nomeArq, silencioso){
     dialogo({titulo:"Campos recebidos do computador", texto:resumo});
     return;
   }
+  if (d && d.compartilhado === true && Array.isArray(d.campos) && Array.isArray(d.inspecoes)) return receberCompartilhado(d, nomeArq, silencioso);   /* v2.5 */
   if (d && d.formato === "cronograma-contagens") { aviso("Esse arquivo é de contagens do PC. No programa, use Arquivo › Enviar campos para a Caderneta."); return; }
   if (!(d && Array.isArray(d.campos) && Array.isArray(d.inspecoes))) { aviso("Arquivo não reconhecido como Caderneta"); return; }
   const esc2 = await dialogo({titulo:"Abrir cópia da Caderneta", texto:(d.campos.length + " campo(s) e " + d.inspecoes.length + " inspeção(ões) no arquivo. Juntar com o que já está aqui ou trocar tudo pelo arquivo?"),
@@ -5904,7 +6196,7 @@ const REG_TIPOS = {
     ["hora", "Hora", "hora"], ["contaminante", "Contaminante", "texto"], ["tipo_vizinho", "Tipo da fonte (tabela de isolamento)", "opcao", REG_TIPOS_VIZINHO],
     ["classe", "Tipo de relatório", "opcao", ["Total", "Metade do Campo", "Outros"]], ["outros", "Se outros, quais?", "texto"],
     ["faixa", "Faixa do campo / glebas", "texto"],
-    ["ocorrencia", "Ocorrência (texto-modelo)", "opcao", ["Milho comercial polinizando perto do campo", "Restauração de pendão em RHS (plantas fêmeas)", "Plantas voluntárias (tiguera) polinizando", "Outra"]],
+    ["ocorrencia", "Ocorrência (texto-modelo)", "opcao", ["Plantas fêmeas polinizando (contagem)", "Rogue ou tiguera polinizando (contagem)", "Milho comercial polinizando perto do campo", "Restauração de pendão em RHS (plantas fêmeas)", "Plantas voluntárias (tiguera) polinizando", "Outra"]],
     ["descricao", "Descrição técnica", "longo"], ["isolamento_txt", "Isolamento da lavoura", "longo"], ["obs_adicionais", "Observações adicionais", "longo"],
     ["distancia", "Distância encontrada (m)", "num"], ["ponto", "Ponto do contaminante (GPS)", "ponto"]]},
   irreg_plantio:{nome:"Irregularidade de plantio", campos:[
@@ -5998,6 +6290,34 @@ function regsDoCampo(c){
   const cod = normContrato(c.codigo), gl = normGleba(c.gleba);
   return (DB.registros || []).filter(r => !r.removido && normContrato(r.contrato) === cod && (!gl || !r.gleba || normGleba(r.gleba) === gl))
     .sort((a, b) => (b.data || "").localeCompare(a.data || "") || num(b.alterado) - num(a.alterado));
+}
+/* v2.5: registro de irregularidade já preenchido pela inspeção (o PC refaz o texto com
+   "Preencher com sugestões do programa" e gera o Excel/PDF no modelo da equipe) */
+function irregDaInsp(i){
+  const c = campoPor(i.campoId) || {}, m = metricas(i, c), ppp = pppDo(c), aval = m.n * ppp;
+  const pl = v => Math.round((v || 0) * aval / 100);
+  const fem = (m.ffp || 0) > 0 || CH_P.some(k => num((i.caminhamento || {})[k]));
+  const atip = (m.atip || 0) > 0 || ATIP_POL.some(k => num((i.caminhamento || {})[k]));
+  const cam = CH_P.concat(ATIP_POL).reduce((s, k) => s + num((i.caminhamento || {})[k]), 0);
+  const r = novoRegistro("irreg_isolamento", c);
+  r.data = i.data || hojeISO(); r.deInsp = i.id;
+  const hib = c.hibrido || "-";
+  const oc = atip && !fem ? "Rogue ou tiguera polinizando (contagem)" : "Plantas fêmeas polinizando (contagem)";
+  const cont = "Contagem nº " + i.numero + " de " + dataBR(i.data) + " (" + m.classe.nome + "): P.P " + pct(m.ffp, 3) + " (" + pl(m.ffp) + " plantas em " + m.n + " pontos)" +
+    (m.atip ? ", atípicas polinizando " + pct(m.atip, 3) + " (" + pl(m.atip) + " plantas)" : "") + (m.er != null ? ", E.R. " + pct(m.er, 2) : "") +
+    (cam ? ", " + cam + " planta(s) polinizando no caminhamento" : "") + ".";
+  const desc = ["Híbrido: " + hib, "Material: " + (atip && !fem ? "Atípicas (rogue/tiguera)" : "Fêmeas"), "Tipo de ocorrência: " + (atip && !fem ? "plantas atípicas polinizando" : "plantas fêmeas polinizando"), "",
+    "1. Descrição da ocorrência", "Durante as avaliações do campo de produção do híbrido " + hib + ", foi observada " + (atip && !fem ? "a presença de plantas atípicas (rogue ou tiguera) polinizando" : "uma quantidade significativa de plantas fêmeas polinizando") +
+    " no contrato " + (c.codigo || "") + ".", "",
+    "2. Hipóteses avaliadas", atip && !fem ? "2.1 Mistura de semente ou plantas fora de tipo (rogue) no lote." : "2.1 Atraso no despendoamento pela turma.",
+    atip && !fem ? "2.2 Sementes de safra anterior germinando na área (tiguera)." : "2.2 Clima (graus-dia) antecipando a abertura dos pendões.", "",
+    "3. Avaliações realizadas", "• " + cont, "• Possível avaliação de SNP futuramente.", "",
+    "4. Conclusão preliminar", "Os fatores que levaram a essa ocorrência ainda estão sob investigação."].join("\n");
+  Object.assign(r.dados, {hora:i.hora || agoraHHMM(), contaminante:[fem ? "Plantas fêmeas POL" : "", atip ? "Rogue/tiguera POL" : ""].filter(Boolean).join(" e ") || "Plantas fêmeas POL",
+    classe:"Total", faixa:c.gleba || "", ocorrencia:oc, descricao:desc,
+    obs_adicionais:"Foi informado à turma e ao RC sobre a situação do campo.\n• Ações corretivas recomendadas:\n• Prazos para regularização:\n• Observações do cooperante:"});
+  r.fotos = (i.fotos || []).filter(f => f.relatorio !== false).map(f => Object.assign({}, f));     /* as mesmas fotos (não duplica no aparelho) */
+  return r;
 }
 function novoRegistro(tipo, c){
   const d = {};
@@ -6093,7 +6413,7 @@ function secWifi(){
     '<div class="f"><label for="wifi-senha">Senha</label><input id="wifi-senha" inputmode="numeric" maxlength="6" placeholder="6 números" value="' + esc(WIFI.senha) + '"></div></div>' +
     '<div class="btns"><button class="btn pri" data-a="wifi-trocar">' + ico("dados") + " Trocar agora</button></div>" +
     '<p class="peq mut" style="margin:0">No Android, aceite o acesso à rede local quando o Chrome pedir. No iPhone o Safari não deixa a troca direta: abra o endereço do PC no Safari e use a página dele.</p>' +
-    '<p class="peq mut" style="margin:0">Sem rede que funcione? <b>Compartilhar arquivo</b> › Bluetooth ou Quick Share; no PC: <i>Menu › Trocar por Bluetooth ou Quick Share</i>.</p></div>');
+    '<p class="peq mut" style="margin:0">Sem rede que funcione? <b>Enviar arquivo</b> (aba Dados) › Bluetooth ou Quick Share; no PC: <i>Menu › Trocar por Bluetooth ou Quick Share</i>.</p></div>');
 }
 async function lerQR(titulo){
   if (!("BarcodeDetector" in window) || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -6225,7 +6545,7 @@ function falhaWifi(d){
     html = "<p><b>O pedido saiu do celular, mas o computador não respondeu.</b> O app não é o problema: algo no caminho está barrando.</p>" +
       "<p>1. Veja na janela do Wi-Fi do PC se apareceu <i>“O celular chegou ao PC”</i>. Se não: clique em <b>Liberar no firewall do Windows</b> nessa janela.</p>" +
       "<p>2. Wi-Fi de visitante e de empresa costumam isolar os aparelhos. Ligue o <b>roteador do celular</b> e conecte o PC nele.</p>" +
-      "<p>3. Sem rede que funcione: use <b>Compartilhar arquivo</b> (WhatsApp, e-mail, Bluetooth ou Quick Share).</p>";
+      "<p>3. Sem rede que funcione: use <b>Enviar arquivo</b> (WhatsApp, e-mail, Bluetooth ou Quick Share).</p>";
   } else if (d.perm === "granted") {
     html = "<p><b>O PC recusou a conexão.</b> Confira se a janela do Wi-Fi está aberta no PC e leia o QR de novo (o endereço e a senha mudam a cada vez).</p>";
   } else {

@@ -4,7 +4,7 @@
    uso real podem ficar no mesmo site sem uma apagar o cache (o uso sem internet) da outra. */
 const TESTE = new URL(self.location.href).searchParams.has("teste");
 const PREFIXO = TESTE ? "cadteste-" : "caderneta-";
-const VERSAO = PREFIXO + "5f2ea775a7";   /* carimbo dos arquivos do app: ferramentas/carimbar_sw.py */
+const VERSAO = PREFIXO + "d0ccf937b9";   /* carimbo dos arquivos do app: ferramentas/carimbar_sw.py */
 const APP = ["./", "index.html", TESTE ? "manifest-teste.webmanifest" : "manifest.webmanifest", "icone.svg", "icone-180.png", "icone-192.png", "icone-512.png", "icone-mascara-512.png"];
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(VERSAO).then(c => c.addAll(APP)));
