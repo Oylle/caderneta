@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-9OsV6kYzz05kh7CM47cdd2s19zPqfjuRhnOlcgrVbl8='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src 'self' http: https://server.arcgisonline.com; font-src 'self'; worker-src 'self'; manifest-src 'self'; media-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-XPAkgppS7nJxDTGnT9bSbCsRnCLrSnrZPlWi2nQcQGM='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src 'self' http: https://server.arcgisonline.com; font-src 'self'; worker-src 'self'; manifest-src 'self'; media-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#FFFFFF">
 <meta name="mobile-web-app-capable" content="yes">
@@ -105,6 +105,7 @@ a{color:var(--azul)}
 .topo-nome{font-family:var(--f-titulo);font-weight:700;font-size:17px;letter-spacing:.01em;line-height:1.1}
 .topo-sub{font-size:12px;color:var(--tinta3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .topo-sub b{font-weight:600}
+.topo-user{margin-left:8px;padding:1px 8px;border-radius:999px;background:var(--azul-suave);color:var(--azul-forte);font-size:12px;font-weight:600;font-family:var(--f-texto);vertical-align:2px;letter-spacing:0;white-space:nowrap}
 .topo-acoes{display:flex;gap:6px;align-items:center}
 .btn-ico{min-width:40px;height:40px;border-radius:11px;border:1px solid var(--linha);background:var(--sup3);
   display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:0 9px;cursor:pointer;color:var(--tinta2)}
@@ -418,7 +419,7 @@ main.com-rodape{padding-bottom:calc(176px + env(safe-area-inset-bottom,0px))}
 <div class="app">
   <header class="topo">
     <span id="marca"></span>
-    <div class="topo-txt"><div class="topo-nome">Vana<span class="nome-longo"> Caderneta</span></div><div class="topo-sub" id="topo-sub">abrindo…</div></div>
+    <div class="topo-txt"><div class="topo-nome">Vana<span class="nome-longo"> Caderneta</span><span class="topo-user" id="topo-user" hidden></span></div><div class="topo-sub" id="topo-sub">abrindo…</div></div>
     <div class="topo-acoes">
       <button type="button" class="btn-ico chip-gps" id="b-gps" aria-label="GPS — abrir o mapa"><i></i>GPS</button>
       <button type="button" class="btn-ico" id="b-sol" aria-label="Modo sol: contraste máximo" aria-pressed="false"></button>
@@ -540,8 +541,8 @@ const FRASES_MONITORAMENTO = ["Isolamento monitorado.", "Pivô irrigando.", "Piv
 const PLANTAS_POR_PONTO = 100;
 const LARGURA_BLOCO = 4.5;
 /* v2.5 — AS REGRAS (limites de risco, notas, metas, pontos pela área, curva) NÃO ficam neste código,
-   que é público: elas vêm do programa do PC DENTRO do pacote de campos (protegido com a chave) e
-   ficam guardadas neste aparelho (DB.regras). Antes de receber os campos do PC, o app conta e
+   que é público: elas vêm do programa do PC DENTRO do pacote de campos (protegido com a chave), ou
+   da licença de celular, e ficam guardadas neste aparelho CIFRADAS com uma chave dele (etapa 20). Antes de receber os campos do PC, o app conta e
    calcula os percentuais, mas não classifica ("Sem regras"). */
 let PONTOS_POR_AREA = null, CLASSES = null, ER_MINIMO = null, ESTIGMA_SECO_FIM = null, PENDAO_TIRADO_META = null;
 let NOTA_DESP_LINHAS = null, NOTA_DESP_COLUNAS = null, NOTA_DESP = null, NOTA_ATIP_LINHAS = null, NOTA_ATIP = null;
@@ -568,7 +569,13 @@ function aplicarRegras(r){
   CURVA_PICO_MIN_MP = ok ? Number(r.curvaPicoMinMp) : null; ER_ENTRADA_QUEDA = ok ? Number(r.erEntradaQueda) : null;
   FASES_CURVA.pre = "Pré-florescimento" + (ok ? " (E.R. < " + fmtNum(ER_MINIMO, 0) + "%)" : "");
 }
-function garantirRegras(){ if (REGRAS_APLICADAS !== (DB.regras || null)) aplicarRegras(DB.regras || null); }
+/* v2.5 (etapa 20): os critérios vêm do PC (pacote de campos) ou da licença de celular, mas nos
+   dois casos ficam GUARDADOS CIFRADOS com uma chave deste aparelho (que não sai dele) e abertos só
+   na memória: REGRAS_PC e REGRAS_CEL. Vale primeiro o do PC. DB.regras só existe em dados antigos
+   e é cifrado e apagado na primeira abertura (migrarRegras). */
+let REGRAS_PC = null;
+function regrasAtuais(){ return REGRAS_PC || (typeof REGRAS_CEL !== "undefined" ? REGRAS_CEL : null) || DB.regras || null; }
+function garantirRegras(){ const r = regrasAtuais(); if (REGRAS_APLICADAS !== r) aplicarRegras(r); }
 const SEM_REGRAS = "Receba os campos do computador para carregar as regras de classificação.";
 const FASES_CURVA = {
   pre:"Pré-florescimento", subida:"Subida — florescimento começando",
@@ -1146,7 +1153,7 @@ const CFG_PADRAO = {
   gpsLigado:true, gpsTrilha:true, gpsPrecisao:30,
   msgDecimal:".", msgMaiusculas:true, msgRecomendacao:"risco", msgProxima:false,
   ultimoEnvio:0, ultimaCopiaArq:0,
-  nomeAparelho:"", pinMin:15, regiao:"", pfArranjo:"lados"
+  nomeAparelho:"", pinMin:15, regiao:"", pfArranjo:"lados", apelido:""
 };
 
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
@@ -1227,11 +1234,144 @@ async function conferirLicencaCelular(env){
     return {dados:d};
   } catch (e) { return {erro:"Não deu para conferir a licença (" + (e && e.message || e) + ")"}; }
 }
+/* v2.5 (etapa 20): a licença de celular é PRESA AO APARELHO. Este celular tem duas chaves
+   próprias, criadas aqui e que nunca saem dele (o navegador não deixa exportar a parte secreta):
+   ECDH, para abrir os critérios que a Orshu cifra só para ele, e ECDSA, para assinar as
+   inspeções. O pedido (VANACEL1-…) leva só as partes públicas. Os critérios abertos ficam só na
+   memória (REGRAS_CEL), nunca gravados. */
+let DISP = null, REGRAS_CEL = null, LIC_CEL_ERRO = "";
+const INFO_REGRAS_CEL = "vana-licenca-celular/regras";
+async function chavesDoAparelho(criar){
+  if (DISP) return DISP;
+  if (!criptoDisponivel() || !idb) return null;
+  try {
+    let k = await idbGet("kv", "disp-chaves");
+    if (!k && criar) {
+      const ecdh = await crypto.subtle.generateKey({name:"ECDH", namedCurve:"P-256"}, false, ["deriveBits"]);
+      const ecdsa = await crypto.subtle.generateKey({name:"ECDSA", namedCurve:"P-256"}, false, ["sign", "verify"]);
+      k = {ecdh:ecdh, ecdsa:ecdsa, em:Date.now()};
+      if (!(await idbPut("kv", k, "disp-chaves"))) return null;
+    }
+    if (!k || !k.ecdh || !k.ecdsa) return null;
+    const pub = async c => u8B64(new Uint8Array(await crypto.subtle.exportKey("raw", c)));
+    DISP = {ecdh:k.ecdh, ecdsa:k.ecdsa, pubE:await pub(k.ecdh.publicKey), pubS:await pub(k.ecdsa.publicKey)};
+    return DISP;
+  } catch (e) { return null; }
+}
+async function chaveRegras(criar){
+  if (!criptoDisponivel() || !idb) return null;
+  try {
+    let k = await idbGet("kv", "disp-regras");
+    if (!k && criar) {
+      k = await crypto.subtle.generateKey({name:"AES-GCM", length:256}, false, ["encrypt", "decrypt"]);     /* não exportável */
+      if (!(await idbPut("kv", k, "disp-regras"))) return null;
+    }
+    return k || null;
+  } catch (e) { return null; }
+}
+const AAD_REGRAS = () => new TextEncoder().encode("vana-regras-pc|" + (DB.aparelho || ""));
+/* guarda os critérios do PC cifrados; eles ficam abertos só na memória (REGRAS_PC) */
+async function guardarRegrasPC(r){
+  REGRAS_PC = r || null; DB.regras = null;
+  if (!r) { DB.regrasCif = null; return true; }
+  const k = await chaveRegras(true);
+  if (!k) { DB.regrasCif = null; return false; }          /* sem como cifrar: valem até fechar o app (receba de novo depois) */
+  try {
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const ct = new Uint8Array(await crypto.subtle.encrypt({name:"AES-GCM", iv:iv, additionalData:AAD_REGRAS()}, k, new TextEncoder().encode(JSON.stringify(r))));
+    DB.regrasCif = {v:1, iv:u8B64(iv), ct:u8B64(ct), em:Date.now()};
+    return true;
+  } catch (e) { DB.regrasCif = null; return false; }
+}
+async function abrirRegrasPC(){
+  if (!DB.regrasCif) return null;
+  const k = await chaveRegras(false); if (!k) return null;
+  try {
+    const pt = await crypto.subtle.decrypt({name:"AES-GCM", iv:b64U8(DB.regrasCif.iv), additionalData:AAD_REGRAS()}, k, b64U8(DB.regrasCif.ct));
+    const r = JSON.parse(new TextDecoder().decode(pt));
+    return r && Array.isArray(r.classes) ? r : null;
+  } catch (e) { return null; }
+}
+/* ao abrir: abre os critérios guardados; dados antigos (critérios abertos em DB.regras) são cifrados e apagados */
+async function migrarRegras(){
+  if (DB.regras && typeof DB.regras === "object") { await guardarRegrasPC(DB.regras); salvar(); }
+  else if (DB.regrasCif && !REGRAS_PC) REGRAS_PC = await abrirRegrasPC();
+  render();
+  /* as cópias internas de antes também tinham os critérios abertos: tira deles */
+  try {
+    for (const x of await idbTodos("copias")) {
+      if (!x || typeof x.txt !== "string" || x.txt.indexOf('"regras":{') < 0) continue;
+      const d = JSON.parse(x.txt); if (!d || d.cifrado) continue;
+      d.regras = null; x.txt = JSON.stringify(d); await idbPut("copias", x);
+    }
+  } catch (e) {}
+}
+function b64url(txt){ return btoa(unescape(encodeURIComponent(txt))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); }
+async function pedirLicencaCelular(){
+  if (!criptoDisponivel()) { aviso("Abra a Caderneta pelo endereço https para pedir a licença"); return; }
+  const K = await chavesDoAparelho(true);
+  if (!K) { aviso("Não deu para criar a chave deste aparelho (o navegador está bloqueando o armazenamento?)", null, 7000); return; }
+  let nome = (DB.usuario && DB.usuario.nome) || DB.cfg.apelido || "";
+  if (!nome) {
+    const v = await dialogo({titulo:"Seu nome", html:'<p class="peq" style="margin:0 0 8px">Vai no pedido, para a Orshu saber de quem é.</p><div class="f tudo"><input id="lc-nome" autocomplete="name"></div>',
+      botoes:[{rotulo:"Cancelar", valor:null}, {rotulo:"Continuar", valor:"ok", classe:"pri", coletar:veu => veu.querySelector("#lc-nome").value}]});
+    if (v == null || !String(v).trim()) return;
+    nome = String(v).trim().slice(0, 60); DB.cfg.apelido = DB.cfg.apelido || nome.split(/\s+/)[0]; salvar();
+  }
+  const ped = "VANACEL1-" + b64url(JSON.stringify({v:1, a:DB.aparelho, u:DB.usuario ? DB.usuario.codigo : "", n:nome, e:K.pubE, s:K.pubS, t:Date.now()}));
+  const r = await dialogo({titulo:"Pedido de licença de celular", html:'<p class="peq" style="margin:0 0 8px">Mande este pedido para a Orshu. A licença que voltar vale <b>só neste celular</b>' +
+      " (aparelho " + esc(nomeAparelho()) + ") e os critérios vêm cifrados para ele.</p>" + '<textarea class="msg mono" style="width:100%;min-height:150px;font-size:12px" readonly>' + esc(ped) + "</textarea>",
+    botoes:[{rotulo:"Fechar", valor:null}, {rotulo:"Copiar", valor:"copiar"}].concat(navigator.share ? [{rotulo:"Enviar", valor:"enviar", classe:"pri"}] : [])});
+  if (r === "copiar") copiarTexto(ped, "Pedido");
+  if (r === "enviar") { try { await navigator.share({title:"Pedido de licença Vana", text:ped}); } catch (e) {} }
+}
+async function decifrarRegrasCel(d){
+  const K = await chavesDoAparelho(false);
+  const outro = {erro:"Esta licença é de outro aparelho" + (d.aparelho ? " (" + d.aparelho + ")" : "") + ". Peça uma com o pedido DESTE celular (Ajustes › Licença)."};
+  if (!K) return d.aparelho && d.aparelho !== DB.aparelho ? outro
+    : {erro:"Este celular não tem mais a chave da licença (os dados do navegador foram apagados?). Peça uma licença nova com o pedido deste celular."};
+  if (!d.disp || d.disp.e !== K.pubE) return outro;
+  try {
+    const rc = d.regras_cifradas || {}, enc = t => new TextEncoder().encode(String(t));
+    const epk = await crypto.subtle.importKey("raw", b64U8(rc.epk), {name:"ECDH", namedCurve:"P-256"}, false, []);
+    const bits = await crypto.subtle.deriveBits({name:"ECDH", public:epk}, K.ecdh.privateKey, 256);
+    const hk = await crypto.subtle.importKey("raw", bits, "HKDF", false, ["deriveKey"]);
+    const k = await crypto.subtle.deriveKey({name:"HKDF", hash:"SHA-256", salt:enc(d.id), info:enc(INFO_REGRAS_CEL)}, hk, {name:"AES-GCM", length:256}, false, ["decrypt"]);
+    let corpo = new Uint8Array(await crypto.subtle.decrypt({name:"AES-GCM", iv:b64U8(rc.iv), additionalData:enc(d.id)}, k, b64U8(rc.ct)));
+    corpo = await _fluxo(corpo, new DecompressionStream("gzip"));
+    const r = JSON.parse(new TextDecoder().decode(corpo));
+    if (!r || !Array.isArray(r.classes)) throw new Error("vazio");
+    return {regras:r};
+  } catch (e) { return {erro:"Os critérios da licença não abriram neste celular. Peça uma licença nova com o pedido deste celular."}; }
+}
+/* ao abrir o app: a licença guardada é conferida e os critérios são abertos de novo (só na memória) */
+async function carregarLicencaCelular(){
+  const L = DB.licenca;
+  if (!L || !L.celular) return;
+  if (!DB.licencaCel) {                      /* licença de celular da versão anterior (critérios abertos): não vale mais */
+    if (DB.regras && L.celular && !DB.regrasCif) DB.regras = null;
+    LIC_CEL_ERRO = "Licença de celular do formato antigo. Peça uma nova (Ajustes › Licença › Pedir licença de celular).";
+    salvar(); render(); return;
+  }
+  const r = await conferirLicencaCelular(DB.licencaCel);
+  const dec = r.erro ? r : await decifrarRegrasCel(r.dados);
+  if (dec.erro) { REGRAS_CEL = null; LIC_CEL_ERRO = dec.erro; }
+  else { REGRAS_CEL = dec.regras; LIC_CEL_ERRO = ""; }
+  render();
+}
 async function receberLicencaCelular(env, silencioso){
   const r = await conferirLicencaCelular(env);
   if (r.erro) { aviso(r.erro, null, 7000); return; }
   const d = r.dados, u = d.usuario || {};
-  if (!d.valido_ate || hojeISO() > d.valido_ate) { aviso("Essa licença de celular venceu" + (d.valido_ate ? " em " + dataBR(d.valido_ate) : "") + ". Peça uma nova à Orshu.", null, 7000); return; }
+  if (num(d.versao) < 2 || !d.regras_cifradas) { aviso("Essa licença de celular é do formato antigo. Peça uma nova: Ajustes › Licença › Pedir licença de celular.", null, 8000); return; }
+  /* relógio: uma licença NOVA (nunca instalada aqui), assinada agora pela Orshu, prova a hora certa —
+     corrige o caso de o celular ter ficado com a data adiantada por engano */
+  const nova = !(DB.licUsadas || []).includes(d.id), recente = num(d.emitida_em) && Math.abs(Date.now() - num(d.emitida_em)) < 3 * 864e5;
+  if (relogioAtrasado() && nova && recente) DB.relogioMax = Date.now();
+  if (relogioAtrasado()) { aviso("O relógio do celular está atrasado. Ligue a data e hora automáticas e abra a licença de novo.", null, 8000); return; }
+  const dec = await decifrarRegrasCel(d);
+  if (dec.erro) { aviso(dec.erro, null, 8000); return; }
+  if (!d.valido_ate || hojeEfetivo() > d.valido_ate) { aviso("Essa licença de celular venceu" + (d.valido_ate ? " em " + dataBR(d.valido_ate) : "") + ". Peça uma nova à Orshu.", null, 7000); return; }
   let extra = "";
   if (u.codigo && DB.usuario && DB.usuario.codigo !== u.codigo) {
     const v = await dialogo({titulo:"Licença de outro usuário", texto:"A licença é de " + (u.nome || u.codigo) + " (" + u.codigo + "). Esta Caderneta é de " +
@@ -1243,13 +1383,17 @@ async function receberLicencaCelular(env, silencioso){
   }
   if (u.codigo && !DB.usuario) DB.usuario = {codigo:String(u.codigo), nome:String(u.nome || "")};
   DB.licenca = {cliente:d.cliente || "", valido_ate:d.valido_ate, estado:"celular", em_dia:true, celular:true, demo:!!d.demo, id:d.id || "",
-    usuarios:u.codigo ? [{codigo:u.codigo, nome:u.nome || ""}] : []};
-  if (d.regras && typeof d.regras === "object") { DB.regras = d.regras; aplicarRegras(DB.regras); }
+    aparelho:d.aparelho || "", usuarios:u.codigo ? [{codigo:u.codigo, nome:u.nome || ""}] : []};
+  DB.licencaCel = {formato:env.formato, versao:env.versao, dados:env.dados, assinatura:env.assinatura};
+  DB.licUsadas = (DB.licUsadas || []).filter(x => x !== d.id).concat([d.id]).slice(-30);
+  DB.regras = null;                        /* os critérios ficam só na memória */
+  REGRAS_CEL = dec.regras; LIC_CEL_ERRO = "";
+  garantirRegras();
   let rc = null;
   if (Array.isArray(d.campos) && d.campos.length) rc = receberPacote({campos:d.campos}, null);
   salvar();
   const resumo = "Licença de celular" + (d.demo ? " (demonstração)" : "") + " de " + (d.cliente || "—") + ", válida até " + dataBR(d.valido_ate) +
-    ". Regras de classificação carregadas: a Caderneta já classifica sem o PC." + (rc ? " " + rc.novos + " campo(s) novo(s)." : "") + extra;
+    ". Os critérios vieram cifrados para este celular: a Caderneta já classifica sem o PC." + (rc ? " " + rc.novos + " campo(s) novo(s)." : "") + extra;
   if (silencioso) return resumo;
   render();
   dialogo({titulo:"Licença instalada", texto:resumo});
@@ -1759,8 +1903,11 @@ function idbApagar(loja, chave){
 
 /* ----------------------------------------------------------- gravação */
 let tGravar = null, tCopia = null, ultimaCopia = 0;
+let tAssinar = 0;
 function salvar(){
   DB.salvoEm = Date.now();
+  if (!relogioAtrasado()) DB.relogioMax = Math.max(num(DB.relogioMax), Date.now());
+  clearTimeout(tAssinar); tAssinar = setTimeout(() => { assinarPendentes(true); }, 4000);
   clearTimeout(tGravar);
   tGravar = setTimeout(gravarAgora, 180);
 }
@@ -1831,10 +1978,14 @@ function aplicar(d){
     n.versaoApp = d.versaoApp || "";           /* dados gravados por uma versão anterior: "" */
     n.cfg = Object.assign({}, CFG_PADRAO, d.cfg || {});
     n.salvoEm = d.salvoEm || 0;
-    n.regras = (d.regras && typeof d.regras === "object") ? d.regras : null;        /* v2.5: regras do PC */
+    n.regras = (d.regras && typeof d.regras === "object") ? d.regras : null;        /* v2.5: regras do PC — só em dados antigos (migrarRegras cifra) */
+    n.regrasCif = (d.regrasCif && typeof d.regrasCif === "object") ? d.regrasCif : null;   /* etapa 20: cifradas com a chave do aparelho */
     n.licenca = (d.licenca && typeof d.licenca === "object") ? d.licenca : null;     /* v2.5: licença do PC (resumo) */
     n.chaves = (d.chaves && typeof d.chaves === "object" && !Array.isArray(d.chaves)) ? d.chaves : {};   /* v2.5: chave(s) de proteção */
     n.chaveAtual = typeof d.chaveAtual === "string" ? d.chaveAtual : "";
+    n.licencaCel = (d.licencaCel && typeof d.licencaCel === "object") ? d.licencaCel : null;        /* v2.5 (etapa 20) */
+    n.relogioMax = num(d.relogioMax);
+    n.licUsadas = Array.isArray(d.licUsadas) ? d.licUsadas : [];
     DB = n;
     return true;
   }
@@ -1987,9 +2138,11 @@ function aplicarEdicoesPC(lista){
     for (let k = e.pontos.length; k < velhos.length; k++) if (velhos[k] && velhos[k].feito) novos.push(velhos[k]);   /* não perde ponto contado aqui */
     if (!mexidaAqui && e.caminhamento && JSON.stringify(e.caminhamento) !== JSON.stringify(i.caminhamento || {})) { i.caminhamento = Object.assign({}, i.caminhamento || {}, e.caminhamento); mudou = true; }
     if (!mexidaAqui && e.estigmaSeco !== "" && e.estigmaSeco != null && num(e.estigmaSeco) !== num(i.estigmaSeco)) { i.estigmaSeco = e.estigmaSeco; mudou = true; }
+    if (!mexidaAqui && num(e.numero) > 0 && num(e.numero) !== num(i.numero)) { i.numero = num(e.numero); mudou = true; }      /* v2.5: nº corrigido no PC */
     i.pcVersao = e.versao || "";
     if (!mudou) return;
     i.pontos = novos;
+    delete i.assin;                                    /* mudança que veio do PC: assina de novo */
     if (mexidaAqui) { tocar(i); r.juntadas++; }        /* volta a ir para o PC, já juntada */
     else { i.seguroPC = Math.max(i.seguroPC || 0, i.alterado || 0); r.atualizadas++; }
   });
@@ -2088,8 +2241,15 @@ async function salvarCopia(){
 /* v2.5: lembrete semanal — 7 dias sem cópia de segurança fora do app: aviso fixo na lista de campos */
 /* v2.5: licença — o resumo vem do PC junto com os campos. Vencida: não cria inspeção nova (as que
    já existem continuam abertas, editáveis e podem ir para o PC). Sem resumo (PC antigo): livre. */
+/* v2.5 (etapa 20): relógio atrasado de propósito (para a licença não vencer) é percebido: a
+   Caderneta lembra o maior horário que já viu neste aparelho (gravado junto com os dados, aqui e
+   na cópia interna). Folga de 2 h para fuso e acerto de horário. */
+const RELOGIO_FOLGA = 2 * 3600e3;
+function relogioAtrasado(){ return Date.now() < num(DB.relogioMax) - RELOGIO_FOLGA; }
+function hojeEfetivo(){ const t = Math.max(Date.now(), num(DB.relogioMax)); const d = new Date(t); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
 function licencaEmDia(){
   const L = DB.licenca;
+  if (L && L.celular) return !LIC_CEL_ERRO && !relogioAtrasado() && !!REGRAS_CEL && !!L.valido_ate && hojeEfetivo() <= L.valido_ate;
   if (!L || L.em_dia !== false) {
     if (L && L.valido_ate && L.estado !== "avaliacao" && hojeISO() > L.valido_ate) {
       const fim = new Date(L.valido_ate + "T12:00:00"); fim.setDate(fim.getDate() + 7);         /* a mesma tolerância do PC */
@@ -2101,6 +2261,8 @@ function licencaEmDia(){
 }
 function htmlLicenca(){
   const L = DB.licenca; if (!L) return "";
+  if (L.celular && relogioAtrasado()) return '<div class="nota alerta"><b>O relógio do celular está atrasado</b> (ele já marcou ' + new Date(num(DB.relogioMax)).toLocaleString("pt-BR") + "). Ligue <i>Data e hora automáticas</i> nas configurações do celular para voltar a criar inspeções.</div>";
+  if (L.celular && LIC_CEL_ERRO) return '<div class="nota alerta"><b>Licença de celular:</b> ' + esc(LIC_CEL_ERRO) + "</div>";
   const dias = L.valido_ate ? Math.round((new Date(L.valido_ate + "T12:00:00") - new Date(hojeISO() + "T12:00:00")) / 864e5) : null;
   const renove = L.celular ? "Peça uma nova licença de celular à Orshu (Ajustes › Licença)." : "Renove no PC (Menu › Licença).";
   if (!licencaEmDia()) return '<div class="nota alerta"><b>Licença do Vana vencida.</b> Dá para ver e enviar o que já está aqui; para criar inspeções novas, ' +
@@ -2345,8 +2507,9 @@ document.addEventListener("click", e => {
 }, true);
 function htmlTrava(i){
   if (i.exemplo) return "";
+  if (inspMexida(i)) return '<div class="nota alerta trava"><span class="cresce">⚠ <b>Números alterados fora da Caderneta.</b> Não batem com a assinatura deste aparelho; o PC vai acusar ao receber.</span></div>';
   if (inspTravada(i)) return '<div class="nota trava"><span class="cresce">🔒 <b>Concluída e travada.</b> Para mudar algo, toque em Editar (o motivo fica registrado).</span>' +
-    '<button class="btn peq" data-a="destravar" data-id="' + i.id + '">Editar</button></div>';
+    '<span class="btns" style="gap:6px"><button class="btn peq" data-a="renumerar" data-id="' + i.id + '">Corrigir nº</button><button class="btn peq" data-a="destravar" data-id="' + i.id + '">Editar</button></span></div>';
   if (i.edicao) return '<div class="nota alerta trava"><span class="cresce">✎ <b>Editando</b> — motivo: ' + esc(i.edicao.motivo) + '. Toque em Pronto para salvar e fechar.</span>' +
     '<button class="btn peq pri" data-a="retravar" data-id="' + i.id + '">Pronto</button></div>';
   return "";
@@ -2376,8 +2539,48 @@ function campoParaPC(c){
     limite:(c.origem === "celular" || (c.divisao && c.divisao.origem === "celular")) ? c.limite : null, obs:c.obs,
     divisao:c.divisao || null};
 }
+/* v2.5 (etapa 20): cada inspeção é assinada com a chave deste aparelho (que não sai dele). O PC
+   confere: número mexido fora da Caderneta (no armazenamento do navegador, num arquivo editado)
+   não bate com a assinatura. Inspeção travada só é assinada de novo se a mudança veio pelo app
+   (alterado depois da última assinatura) — assim um valor trocado por fora não é "lavado". */
+function canonNum(v){ if (v === "" || v == null || typeof v === "boolean") return null; const n = Number(v); return isFinite(n) ? n : null; }
+function canonObj(o){ const r = {}; Object.keys(o || {}).sort().forEach(k => { const n = canonNum(o[k]); if (n !== null && n !== 0) r[k] = n; }); return r; }
+const RE_PF_CANON = /^(?:F\d|M\dP-(?:[AB]|L\d)|er|m\d[ab])$/;
+function textoAssinavel(i){
+  const c = campoPor(i.campoId) || {}, pf = {}, P = i.pontoFixo || {};
+  Object.keys(P).sort().forEach(k => { const v = P[k]; if (!RE_PF_CANON.test(k) || !Array.isArray(v)) return; const vals = v.map(canonNum); if (vals.some(x => x !== null)) pf[k] = vals; });
+  return JSON.stringify({v:1, id:String(i.id || ""), contrato:normContrato(c.codigo), gleba:normGleba(c.gleba), numero:canonNum(i.numero), data:String(i.data || ""),
+    pontos:(i.pontos || []).map(p => ({f:pontoFeito(p) ? 1 : 0, a:canonNum(p.avaliadas), c:canonObj(p.c), g:p.gps && p.gps.lat != null ? [canonNum(p.gps.lat), canonNum(p.gps.lon)] : null})),
+    cam:canonObj(i.caminhamento), seco:canonNum(i.estigmaSeco), pf:pf});
+}
+async function assinarInsp(i){
+  const K = await chavesDoAparelho(true); if (!K) return false;
+  const txt = textoAssinavel(i);
+  if (i.assin && i.assin.txt === txt) return false;
+  if (inspMexida(i)) return false;                              /* mexida por fora: fica com a assinatura antiga */
+  const sig = new Uint8Array(await crypto.subtle.sign({name:"ECDSA", hash:"SHA-256"}, K.ecdsa.privateKey, new TextEncoder().encode(txt)));
+  i.assin = {txt:txt, sig:u8B64(sig), chave:K.pubS, ap:DB.aparelho, em:Date.now()};      /* ap: quem assinou (o colega, se veio compartilhada) */
+  return true;
+}
+let ASSINANDO = false;
+async function assinarPendentes(soTravadas){
+  if (ASSINANDO || !criptoDisponivel()) return 0;
+  ASSINANDO = true; let n = 0;
+  try {
+    for (const i of DB.inspecoes) {
+      if (i.exemplo || (soTravadas && !i.travada) || !metricas(i, campoPor(i.campoId)).temDados) continue;
+      try { if (await assinarInsp(i)) n++; } catch (e) {}
+    }
+  } finally { ASSINANDO = false; }
+  if (n) { DB.salvoEm = Date.now(); clearTimeout(tGravar); tGravar = setTimeout(gravarAgora, 180); }
+  return n;
+}
+function inspMexida(i){ return !!(i && !i.exemplo && i.travada && i.assin && num(i.alterado) <= num(i.assin.em) && i.assin.txt !== textoAssinavel(i)); }
 function inspParaPC(i){
   const o = clone(i);
+  delete o.assin;
+  /* a assinatura vai se bate com o que está aqui, ou se a inspeção foi mexida por fora (o PC acusa) */
+  if (i.assin && i.assin.sig && (i.assin.txt === textoAssinavel(i) || inspMexida(i))) o.assinatura = {txt:i.assin.txt, sig:i.assin.sig, chave:i.assin.chave, aparelho:i.assin.ap || ""};
   o.obs = {livre:textoObs(i), pm1:"", pm2:"", ef:""};
   o.pontos = o.pontos.map(p => { p.feito = pontoFeito(p); return p; });
   const c = campoPor(i.campoId);
@@ -2386,8 +2589,8 @@ function inspParaPC(i){
   o.resumo = {ffp:m.ffp, er:m.er, pt:m.pt, mp:m.mp, atip:m.atip, classe:m.classe.nome, pontos:m.n};
   return o;
 }
-function pacoteParaPC(soNovas){
-  const insps = soNovas ? inspsParaEnviar() : DB.inspecoes.filter(i => !i.exemplo);
+function pacoteParaPC(soNovas, lista){
+  const insps = lista || (soNovas ? inspsParaEnviar() : DB.inspecoes.filter(i => !i.exemplo));
   const ids = new Set(insps.map(i => i.campoId));
   /* v2.4: as glebas divididas aqui vão junto (com o limite de cada uma), mesmo sem inspeção nova */
   const campos = DB.campos.filter(c => !c.exemplo && (ids.has(c.id) || !soNovas || (c.gleba && c.divisao && c.divisao.origem === "celular"))).map(campoParaPC);
@@ -2630,6 +2833,10 @@ function receberPacote(d, dono){
     if (Array.isArray(pc.historico)) { c.historico = pc.historico; res.historico += pc.historico.length; }
     if (dono) { c.dono = dono.codigo; c.donoNome = dono.nome || ""; }
     c.alterado = Date.now();
+    /* v2.5 (etapa 20): inspeção feita antes de o campo ter RC/AT fica com os do campo (o PC faz o mesmo) */
+    DB.inspecoes.forEach(i => { if (i.campoId !== c.id || i.exemplo) return;
+      if (!i.representante && c.rc) i.representante = c.rc;
+      if (!i.at && c.at) i.at = c.at; });
   });
   /* v2.4: agenda do computador (só a do próprio usuário). A justificativa que o PC já aplicou
      sai da lista — a tarefa dela não volta como pendente. */
@@ -2667,7 +2874,11 @@ function juntarCopia(d, substituir){
     vindo.aparelho = antes.aparelho;
     vindo.lixeira = antes.lixeira;
     vindo.chaves = antes.chaves; vindo.chaveAtual = antes.chaveAtual;          /* v2.5: a chave e as regras ficam */
-    vindo.regras = vindo.regras || antes.regras;
+    vindo.regras = vindo.regras || null;
+    vindo.regrasCif = antes.regrasCif || null;              /* etapa 20: as daqui (a chave é deste aparelho) */
+    vindo.licencaCel = antes.licencaCel || vindo.licencaCel || null;
+    vindo.licUsadas = antes.licUsadas || vindo.licUsadas || [];
+    vindo.relogioMax = Math.max(num(antes.relogioMax), num(vindo.relogioMax));
     vindo.licenca = vindo.licenca || antes.licenca;
     DB = vindo;
     return {campos:vindo.campos.length, inspecoes:vindo.inspecoes.length};
@@ -3803,16 +4014,16 @@ function telaCampo(){
       const trav = inspTravada(i);
       h += '<button class="item"' + (trav ? " data-trav" : "") + ' data-a="abrir-insp" data-id="' + i.id + '"><div class="t1">' + (trav ? "🔒 " : "") + "Nº " + esc(i.numero) + ' <span class="mut" style="font-weight:600;font-size:15px">' + dataBR(i.data) + "</span></div>" +
         '<div class="t2">' + m.n + "/" + m.previstos + " pontos · E.R. " + pct(m.er, 2) + " · P.T. " + pct(m.pt, 2) +
-        (i.exemplo ? "" : " " + etqEnvio(i)) + "</div>" +
+        (i.exemplo ? "" : " " + etqEnvio(i)) + (inspMexida(i) ? ' <span class="etq envio">⚠ alterada fora</span>' : "") + "</div>" +
         '<div class="dir">' + selo(m.classe, true) + '<span class="mut">F.F.P ' + pct(m.ffp) + "</span></div>" +
         (trav ? '<span class="deslize" data-a="destravar" data-id="' + i.id + '">Editar</span>' : "") + "</button>";
     });
     (c.historico || []).slice().sort((a, b) => cmpItem(b, a)).forEach(hh => {
       if (insps.some(i => num(i.numero) === num(hh.numero) && i.data === hh.data)) return;
       const m = metDeHistorico(hh);
-      h += '<div class="item" style="cursor:default;opacity:.85"><div class="t1">Nº ' + esc(hh.numero) + ' <span class="mut" style="font-weight:600;font-size:15px">' + dataBR(hh.data) + "</span></div>" +
-        '<div class="t2">do computador · E.R. ' + pct(m.er, 2) + "</div>" +
-        '<div class="dir">' + selo(m.classe, true) + '<span class="mut">F.F.P ' + pct(m.ffp) + "</span></div></div>";
+      h += '<button class="item" style="opacity:.85" data-a="hist-info" data-n="' + esc(hh.numero) + '" data-d="' + esc(hh.data) + '"><div class="t1">Nº ' + esc(hh.numero) + ' <span class="mut" style="font-weight:600;font-size:15px">' + dataBR(hh.data) + "</span></div>" +
+        '<div class="t2">do computador · E.R. ' + pct(m.er, 2) + " · toque para ver</div>" +
+        '<div class="dir">' + selo(m.classe, true) + '<span class="mut">F.F.P ' + pct(m.ffp) + "</span></div></button>";
     });
     h += "</div>";
   }
@@ -3885,6 +4096,7 @@ function secLimite(c){
   corpo += '<p class="peq mut" style="margin:0">' + (f ? (f.real ? "Limite: " + esc(f.fonte) + " (" + fmtNum(areaHaLL(f.aneis[0]), 1) + " ha)." : "Sem limite importado — desenhado como " + esc(f.fonte) + ".")
     : "Sem limite: importe o KML/KMZ do pivô ou da gleba (o mesmo que o programa do PC usa) para ver o campo, o caminhamento sugerido e onde fica cada ponto.") + "</p>";
   corpo += '<div class="btns"><button class="btn" data-a="importar-limite">' + ico("receber") + " Importar KML / KMZ / GeoJSON</button>" +
+    (c.limite && !c.exemplo ? '<button class="btn peq" data-a="compartilhar-campos" data-id="' + c.id + '">' + ico("compartilhar") + " Compartilhar</button>" : "") +
     (c.limite ? '<button class="btn peq perigo" data-a="remover-limite">Remover limite</button>' : "") + "</div></div>";
   return sec("sec-limite", "Limite do campo", f ? (f.real ? "importado" : "círculo pela área") : "sem limite", corpo);
 }
@@ -3972,7 +4184,7 @@ function telaInsp(){
   const cab = '<div class="form">' +
     fIn("insp.numero", "Inspeção nº", i.numero, {t:"i"}) + fIn("insp.data", "Data", i.data, {tipo:"date"}) +
     fIn("insp.hora", "Hora", i.hora, {tipo:"time"}) + fIn("insp.proxima", "Próxima inspeção", i.proxima, {tipo:"date"}) +
-    fIn("insp.representante", "Representante (RC)", i.representante, {}) + fIn("insp.at", "AT", i.at, {}) +
+    fIn("insp.representante", "Representante (RC)", i.representante, {ph:c.rc || ""}) + fIn("insp.at", "AT", i.at, {ph:c.at || ""}) +
     fIn("insp.jaleco", "Nº do jaleco", i.jaleco, {}) + fIn("insp.lider", "Líder de qualidade", i.lider, {}) +
     fSel("insp.situacao", "Situação", SITUACOES, i.situacao) + fSel("insp.isolamento", "Isolamento", ISOLAMENTO_OPCOES, i.isolamento) +
     fSel("insp.tempo", "Tempo", TEMPO, i.tempo) + fSel("insp.temperatura", "Temperatura", TEMPERATURA, i.temperatura) +
@@ -4045,14 +4257,19 @@ function pfArranjo(i){
   if (ks.some(k => /^M\dP-[AB]$/.test(k))) return "lados";
   return DB.cfg.pfArranjo === "linhas" ? "linhas" : "lados";
 }
-function pfLinhas(i){
+/* v2.5 (etapa 20): quantas linhas de fêmea e de macho — o inspetor põe e tira (pf.nf / pf.nm);
+   sem escolha, vale a proporção do campo. Linha com valor anotado nunca some sozinha. */
+function pfQtd(i){
   const c = campoPor(i.campoId) || {}, pf = i.pontoFixo || {};
-  let nf = Math.round(num(c.propF, 0)) || 5, nm = Math.round(num(c.machos, 2)) || 2;
+  let nf = Math.round(num(pf.nf, 0)) || Math.round(num(c.propF, 0)) || 5, nm = Math.round(num(pf.nm, 0)) || Math.round(num(c.machos, 2)) || 2;
   Object.keys(pf).forEach(k => {
     let m = /^F(\d)$/.exec(k); if (m && pfTemDado(pf[k])) nf = Math.max(nf, +m[1]);
     m = /^M(\d)P-(?:[AB]|L\d)$/.exec(k); if (m && pfTemDado(pf[k])) nm = Math.max(nm, +m[1]);
   });
-  nf = Math.max(1, Math.min(8, nf)); nm = Math.max(1, Math.min(3, nm));
+  return {nf:Math.max(1, Math.min(8, nf)), nm:Math.max(1, Math.min(3, nm))};
+}
+function pfLinhas(i){
+  const pf = i.pontoFixo || {}, q = pfQtd(i), nf = q.nf, nm = q.nm;
   const L = [];
   if (pfArranjo(i) === "linhas") {
     const lin = j => { L.push(["M" + j + "P-L1", "Macho " + j + " L1", "m"]); L.push(["M" + j + "P-L2", "Macho " + j + " L2", "m"]); };
@@ -4115,6 +4332,12 @@ function blocoPontoFixo(i){
   });
   h += "</tbody></table></div>";
   h += botoesCopiarTabela("pf-tab-wrap", "Ponto fixo");
+  const q = pfQtd(i);
+  h += '<div class="btns pf-linhas" style="padding:0 15px 8px">' +
+    (q.nf < 8 ? '<button class="btn peq" data-a="pf-linha" data-t="f" data-d="1">' + ico("mais") + " Fêmea</button>" : "") +
+    (q.nf > 1 ? '<button class="btn peq" data-a="pf-linha" data-t="f" data-d="-1">− Fêmea</button>' : "") +
+    (q.nm < 3 ? '<button class="btn peq" data-a="pf-linha" data-t="m" data-d="1">' + ico("mais") + " Macho</button>" : "") +
+    (q.nm > 1 ? '<button class="btn peq" data-a="pf-linha" data-t="m" data-d="-1">− Macho</button>' : "") + "</div>";
   h += '<div class="btns" style="padding:0 15px 8px">' + (n < 8 ? '<button class="btn peq" data-a="pf-rep">' + ico("mais") + " Repetição</button>" : "") +
     (n > 1 ? '<button class="btn peq" data-a="pf-rep-menos">− Repetição</button>' : "") +
     '<span class="peq mut" id="pf-resumo" style="align-self:center">' + esc(pfResumo(i) === "não usado" ? "" : "Médias: " + pfResumo(i)) + "</span></div>";
@@ -4393,12 +4616,21 @@ function secNuvem(nPend){
   const corpo = '<div class="pilha" style="gap:10px">' +
     '<div class="nota">' + (pasta ? "O PC usa a pasta <b>" + esc(pasta) + "</b> na nuvem." : "No PC: <i>Menu › Pasta de troca na nuvem</i> escolhe a pasta (a mesma que o Drive ou o OneDrive do celular enxerga).") +
     (up ? "<br>Último arquivo do PC aberto aqui: gerado " + esc(String(up.gerado || "").replace("T", " às ").slice(0, 19)) + ", aberto " + quandoTxt(up.em) + "." : "") + "</div>" +
-    '<ol class="passos peq">' +
+    (fsaEnvio() ? '<ol class="passos peq">' +
+    "<li><b>Enviar para a nuvem</b>: grava direto no arquivo da pasta " + (pasta ? "<b>" + esc(pasta) + "</b>" : "de troca") + (DB.cfg.nuvemDestino ? " (<span class=\"mono\">" + esc(DB.cfg.nuvemDestino) + "</span>)" : " — na primeira vez você escolhe a pasta") + ".</li>" +
+    "<li>No PC: clique em <b>⟳ Nuvem</b>. Ele importa e <b>regrava</b> o arquivo para o celular.</li>" +
+    "<li><b>Receber da nuvem</b>: espere o Drive sincronizar (1 a 2 min) e toque — abre direto o <span class=\"mono\">" + esc(DB.cfg.nuvemOrigem || arq) + "</span>.</li></ol>" +
+    '<div class="btns"><button class="btn' + (nPend ? " pri" : "") + '" data-a="nuvem-enviar">' + ico("compartilhar") + " Enviar para a nuvem</button>" +
+    '<button class="btn' + (nPend ? "" : " pri") + '" data-a="nuvem-receber">' + ico("receber") + " Receber da nuvem</button></div>" +
+    '<p class="peq mut" style="margin:0">' + (DB.cfg.nuvemDestino ? '<button type="button" class="link" data-a="nuvem-enviar" data-trocar="1">Trocar a pasta de envio</button> · ' : "") +
+    (DB.cfg.nuvemOrigem ? '<button type="button" class="link" data-a="nuvem-receber" data-trocar="1">Trocar o arquivo do PC</button> · ' : "") +
+    (DB.cfg.ultimoNuvem ? "último envio " + quandoTxt(DB.cfg.ultimoNuvem) : "") + "</p>"
+    : '<ol class="passos peq">' +
     "<li><b>Mandar</b> as inspeções: <i>Enviar arquivo</i> › Drive (ou OneDrive) › pasta " + (pasta ? "<b>" + esc(pasta) + "</b>" : "de troca") + ".</li>" +
     "<li>No PC: clique em <b>⟳ Nuvem</b>. Ele importa o que chegou e <b>regrava</b> o arquivo para o celular (com o que você completou no PC).</li>" +
     "<li><b>Receber</b>: espere o Drive sincronizar (1 a 2 min) e abra o <span class=\"mono\">" + esc(arq) + "</span> pela <b>pasta</b> (não por “Recentes”, que pode mostrar a versão velha).</li></ol>" +
     '<div class="btns">' + (podeShare ? '<button class="btn' + (nPend ? " pri" : "") + '" data-a="enviar" data-m="auto">' + ico("compartilhar") + " 1. Enviar arquivo</button>" : "") +
-    '<button class="btn' + (nPend ? "" : " pri") + '" data-a="receber">' + ico("receber") + " 3. Abrir o arquivo do PC</button></div>" +
+    '<button class="btn' + (nPend ? "" : " pri") + '" data-a="receber">' + ico("receber") + " 3. Abrir o arquivo do PC</button></div>") +
     '<p class="peq mut" style="margin:0">Se o arquivo aberto for o mesmo da última vez, a Caderneta avisa: o PC ainda não regravou ou o Drive ainda não sincronizou.</p></div>';
   return sec("sec-nuvem", "Pasta da nuvem (Drive, OneDrive)", pasta || "pelo arquivo", corpo);
 }
@@ -4419,7 +4651,8 @@ function telaDados(){
   /* v2.5: um botão só — "compartilhar", "salvar" e "nuvem" davam no mesmo arquivo; o celular
      mostra para onde mandar (Drive/OneDrive = pasta da nuvem do PC, WhatsApp, Quick Share, Arquivos) */
   env += '<div class="btns"><button class="btn pri grande" data-a="enviar" data-m="auto">' + ico(podeShare ? "compartilhar" : "baixar") + " Enviar arquivo</button></div>" +
-    '<p class="peq mut" style="margin:0">' + (podeShare ? "Escolha no celular para onde vai: <b>Drive/OneDrive</b> (a pasta da nuvem do PC), <b>WhatsApp</b>, <b>Quick Share</b> ou <b>Arquivos</b>. " +
+    '<p class="peq mut" style="margin:0">' + (podeShare ? "Abre o compartilhar do celular: <b>Quick Share</b>, <b>Bluetooth</b>, <b>WhatsApp</b>, <b>e-mail</b>, <b>OneDrive</b>… " +
+      (fsaEnvio() ? "Para a pasta da nuvem do PC, use <b>Enviar para a nuvem</b> (abaixo), que grava direto. " : "") +
       '<button type="button" class="link" data-a="enviar" data-m="salvar">Só salvar em Downloads</button> (para o cabo USB).' : "O arquivo vai para Downloads; passe para o PC pelo cabo, e-mail ou nuvem.") + "</p>";
   if (reais.length && pend.length && pend.length < reais.length) env += '<label class="chk"><input type="checkbox" id="enviar-tudo"> <span>Mandar tudo (todas as ' + reais.length + " inspeções), não só as novas</span></label>";
   env += '<div class="nota' + (copiaAtrasada() ? " alerta" : "") + '"><b>Cópia de segurança</b> (fora do app): ' +
@@ -4467,7 +4700,8 @@ function secUsuario(){
          '<span class="peq">O usuário vem do Vana do computador (é o mesmo nos dois). O nome pode ser ajustado aqui: ele vai nos arquivos desta Caderneta.</span></div>' +
          '<div class="btns"><button class="btn" data-a="usuario-nome">Trocar o nome</button></div>'
        : '<div class="nota alerta"><b>Sem usuário.</b> Receba os campos do computador (Dados › Receber do computador) ou faça a troca pelo Wi-Fi: a Caderneta passa a usar o usuário do PC.</div>') +
-    '<div class="form">' + fIn("cfg.nomeAparelho", "Nome deste aparelho", DB.cfg.nomeAparelho, {ph:nomeAparelhoPadrao(), tudo:true, dica:"Aparece no PC (Usuário e aparelhos) e nos arquivos enviados. Ex.: Celular do campo."}) + "</div>" +
+    '<div class="form">' + fIn("cfg.apelido", "Apelido (aparece no topo)", DB.cfg.apelido, {ph:apelidoUsuario() || "seu nome", tudo:true}) +
+    fIn("cfg.nomeAparelho", "Nome deste aparelho", DB.cfg.nomeAparelho, {ph:nomeAparelhoPadrao(), tudo:true, dica:"Aparece no PC (Usuário e aparelhos) e nos arquivos enviados. Ex.: Celular do campo."}) + "</div>" +
     '<p class="peq mut" style="margin:0">Identificação do aparelho: <span class="mono">' + esc(DB.aparelho) + "</span></p></div>";
   return sec("sec-usuario", "Usuário e aparelho", u ? (u.nome || u.codigo) : "sem usuário", corpo, {aberto:!u});
 }
@@ -4495,14 +4729,14 @@ function qrDeLinhas(linhas, tam){
 }
 function secLicenca(){
   const L = DB.licenca;
-  const btCel = '<div class="btns"><button class="btn" data-a="lic-celular">' + ico("receber") + " Abrir licença de celular</button></div>";
+  const btCel = '<div class="btns"><button class="btn" data-a="lic-cel-pedido">Pedir licença de celular</button><button class="btn" data-a="lic-celular">' + ico("receber") + " Abrir licença de celular</button></div>";
   if (!L) return sec("sec-licenca", "Licença do Vana", "", '<div class="pilha" style="gap:10px"><p class="peq" style="margin:0;color:var(--tinta2)">A licença é do programa do PC. Receba os campos do computador para ver a situação e o pedido de licença. ' +
     "Sem o PC: abra a <b>licença de celular</b> que a Orshu mandou (demonstração).</p>" + btCel + "</div>", {aberto:false});
   const vence = L.valido_ate ? dataBR(L.valido_ate) : "";
-  const situ = !licencaEmDia() ? "vencida" : L.estado === "avaliacao" ? "avaliação até " + vence : vence ? "até " + vence : "sem prazo";
+  const situ = L.celular && relogioAtrasado() ? "relógio atrasado" : L.celular && LIC_CEL_ERRO ? "não vale aqui" : !licencaEmDia() ? "vencida" : L.estado === "avaliacao" ? "avaliação até " + vence : vence ? "até " + vence : "sem prazo";
   const corpo = '<div class="pilha" style="gap:10px">' +
     (L.cliente ? '<p class="peq" style="margin:0"><b>' + esc(L.cliente) + "</b> · " + esc(situ) + "</p>" : "") +
-    (L.celular ? '<div class="nota">Licença <b>de celular</b>' + (L.demo ? " (demonstração)" : "") + " — a Caderneta usa as regras que vieram nela, sem o PC. Quando receber os campos de um PC licenciado, vale a licença dele.</div>" + btCel : "") +
+    (L.celular ? htmlLicenca() + '<div class="nota">Licença <b>de celular</b>' + (L.demo ? " (demonstração)" : "") + ", só para este aparelho — a Caderneta usa os critérios que vieram cifrados nela, sem o PC. Quando receber os campos de um PC licenciado, vale a licença dele.</div>" + btCel : "") +
     (L.pedido ? '<div class="lic-pedido">' + qrDeLinhas(L.qr || [], 150) + '<div class="pilha" style="gap:6px"><b>Pedido de licença</b>' +
       '<span class="peq" style="color:var(--tinta2)">Para pedir ou renovar: mostre este QR para quem gera a licença, ou mande o pedido pelo WhatsApp.</span>' +
       '<code class="lic-txt">' + esc(L.pedido) + '</code><div class="btns"><button class="btn pri" data-a="lic-pedido">Mandar o pedido</button></div></div></div>' : "") +
@@ -4630,7 +4864,7 @@ function htmlImpressao(ctx){
   let h = '<div class="pr-cab"><div style="width:30px">' + MARCA.replace('class="marca"', 'width="30" height="30"') + '</div><div style="flex:1"><h1>Inspeção de Florescimento nº ' + esc(i.numero) + "</h1><div>" + esc(nomeCampo(c)) + " · " + dataBR(i.data) + (i.hora ? " às " + esc(i.hora) : "") + "</div></div>" +
     '<div style="text-align:right"><div style="font-size:8pt;text-transform:uppercase">Situação</div><div style="font-size:14pt;font-weight:700">' + esc(cl.nome) + "</div></div></div>";
   h += '<div class="pr-sec"><h3>Identificação</h3><div class="pr-kv">' + kv("Contrato", c.codigo) + kv("Gleba", c.gleba) + kv("Safra", c.safra) + kv("Pivô", c.pivo) + kv("Híbrido", c.hibrido) + kv("Fazenda", c.fazenda) +
-    kv("Município", [c.municipio, c.estado].filter(Boolean).join("/")) + kv("Área (ha)", c.area) + kv("Proporção", c.proporcao) + kv("Representante", i.representante) + kv("AT", i.at) + kv("Jaleco", i.jaleco) +
+    kv("Município", [c.municipio, c.estado].filter(Boolean).join("/")) + kv("Área (ha)", c.area) + kv("Proporção", c.proporcao) + kv("Representante", i.representante || c.rc) + kv("AT", i.at || c.at) + kv("Jaleco", i.jaleco) +
     kv("Situação", i.situacao) + kv("Isolamento", i.isolamento) + kv("Clima", [i.tempo, i.temperatura, i.ventos ? "ventos " + i.ventos.toLowerCase() : ""].filter(Boolean).join(", ")) + "</div></div>";
   h += '<div class="pr-sec"><h3>Índices</h3><div class="pr-tiles">' + tl("F.F.P", pct(m.ffp, 3)) + tl("E.R.", pct(m.er, 2)) + tl("P.T.", pct(m.pt, 2)) + tl("Atípicas pol.", pct(m.atip, 3)) +
     MACHOS.filter(k => m.pct[k] != null).map((k, j) => tl("M.P." + (j + 1), pct(m.pct[k], 2))).join("") + tl("Nota desp.", m.notaDesp || "—") + tl("Nota atíp.", m.notaAtip || "—") + tl("Pontos", m.n + "/" + m.previstos) + "</div>" +
@@ -4648,7 +4882,7 @@ function htmlImpressao(ctx){
   if (fr.length) h += '<div class="pr-sec pr-sec-fotos"><h3>Fotos</h3><div class="pr-fotos">' + fr.map(f => '<figure><img data-foto="' + esc(f.id) + '" alt=""><figcaption>' +
     esc([f.ponto ? "Ponto " + f.ponto : "", new Date(f.t).toLocaleString("pt-BR", {dateStyle:"short", timeStyle:"short"}),
          f.lat != null ? f.lat.toFixed(5) + ", " + f.lon.toFixed(5) + " ±" + f.acc + " m" : "sem GPS", f.legenda].filter(Boolean).join(" · ")) + "</figcaption></figure>").join("") + "</div></div>";
-  h += '<div class="pr-ass"><div>' + esc(i.representante || "Representante") + "<br><small>Representante</small></div><div>" + esc(i.at || "AT") + "<br><small>Assistente técnico</small></div></div>";
+  h += '<div class="pr-ass"><div>' + esc(i.representante || c.rc || "Representante") + "<br><small>Representante</small></div><div>" + esc(i.at || c.at || "AT") + "<br><small>Assistente técnico</small></div></div>";
   h += '<div class="pr-pe"><span>' + ROTULO_APP + " · " + dataBR(hojeISO()) + " · " + esc(PROPRIEDADE) + "</span><span>" + esc(nomeCampo(c)) + " · nº " + esc(i.numero) + "</span></div>";
   return h;
 }
@@ -4843,7 +5077,7 @@ async function relatorioPdf(i){
   titulo("Identificação");
   kv([["Contrato", c.codigo], ["Gleba", c.gleba], ["Safra", c.safra], ["Pivô", c.pivo], ["Híbrido", c.hibrido], ["Fazenda", c.fazenda],
       ["Município", [c.municipio, c.estado].map(x => String(x || "").trim()).filter(Boolean).join("/")], ["Área (ha)", c.area === "" || c.area == null ? "" : num(c.area)], ["Proporção", c.proporcao], ["Representante", i.representante || c.rc],
-      ["AT", i.at], ["Situação", i.situacao], ["Isolamento", i.isolamento], ["Clima", [i.tempo, i.temperatura, i.ventos ? "ventos " + String(i.ventos).toLowerCase() : ""].filter(Boolean).join(", ")]]);
+      ["AT", i.at || c.at], ["Situação", i.situacao], ["Isolamento", i.isolamento], ["Clima", [i.tempo, i.temperatura, i.ventos ? "ventos " + String(i.ventos).toLowerCase() : ""].filter(Boolean).join(", ")]]);
   titulo("Índices");
   const tiles = [["F.F.P", pct(m.ffp, 3)], ["E.R.", pct(m.er, 2)], ["P.T.", pct(m.pt, 2)], ["Atípicas pol.", pct(m.atip, 3)]]
     .concat(MACHOS.filter(k => m.pct[k] != null).map((k, j) => ["M.P." + (j + 1), pct(m.pct[k], 2)]))
@@ -4926,7 +5160,7 @@ async function relatorioPdf(i){
   }
   /* assinaturas */
   quebra(70); y += 30;
-  [[i.representante || c.rc || "", "Representante de campo"], [i.at || "", "Assistente técnico"]].forEach(([n, papel], j) => {
+  [[i.representante || c.rc || "", "Representante de campo"], [i.at || c.at || "", "Assistente técnico"]].forEach(([n, papel], j) => {
     const x = ML + j * (LARG / 2) + 10, w = LARG / 2 - 20;
     P.linha(x, y, x + w, y, TINTA2, 0.6); P.texto(x + w / 2, y + 12, n || " ", {tam:9, negrito:true, alinh:"centro"}); P.texto(x + w / 2, y + 23, papel, {tam:8, cor:TINTA2, alinh:"centro"});
   });
@@ -5067,7 +5301,15 @@ function depoisDeRender(){
   manterTelaAcesa(S.tela === "ponto" || S.tela === "insp");
   if (S.tela === "dados") carregarCopias();
 }
+function apelidoUsuario(){
+  const a = String((DB.cfg && DB.cfg.apelido) || "").trim();
+  if (a) return a.slice(0, 24);
+  const u = DB.usuario; if (!u) return "";
+  return String(u.nome || u.codigo || "").trim().split(/\s+/)[0] || u.codigo;
+}
 function pintarTopo(){
+  const tu = document.getElementById("topo-user");
+  if (tu) { const a = apelidoUsuario(); tu.hidden = !a; tu.textContent = a; tu.title = DB.usuario ? (DB.usuario.nome || "") + " (" + DB.usuario.codigo + ")" : ""; }
   const sub = document.getElementById("topo-sub");
   const n = DB.inspecoes.length ? inspsNaoSeguras().length : 0;
   if (sub) {
@@ -5141,7 +5383,7 @@ function valorDe(el){
   if (t === "i") return v.trim() === "" ? "" : Math.round(num(v, 0));
   return v;
 }
-const RERENDER = ["insp.recomAuto", "cfg.mostrarPM", "cfg.mostrarFP", "cfg.msgRecomendacao", "campo.caminho.forma", "campo.machos", "campo.gleba",
+const RERENDER = ["cfg.apelido", "insp.recomAuto", "cfg.mostrarPM", "cfg.mostrarFP", "cfg.msgRecomendacao", "campo.caminho.forma", "campo.machos", "campo.gleba",
                   "cfg.gpsTrilha", "cfg.msgDecimal", "cfg.msgProxima", "cfg.msgMaiusculas", "cfg.pinMin"];
 function aoMudarBind(el, fim){
   const path = el.dataset.b, a = alvoBind(path);
@@ -5349,6 +5591,31 @@ async function acao(a, b, id){
       pf.reps = n - 1; tocar(i); salvar(); render();
       return;
     }
+    case "renumerar": {            /* v2.5 (etapa 20): a nº 1 e 2 que eram a 4 e 5 */
+      const x = inspPor(id) || inspPor(S.inspId); if (!x) return;
+      return renumerarInsp(x);
+    }
+    case "hist-info": {
+      const c = campoPor(S.campoId); if (!c) return;
+      const hh = (c.historico || []).find(h => String(h.numero) === String(b.dataset.n) && h.data === b.dataset.d); if (!hh) return;
+      const m = metDeHistorico(hh);
+      return dialogo({titulo:"Inspeção nº " + hh.numero + " · " + dataBR(hh.data), texto:"Esta inspeção está no computador: foi lançada lá, ou feita noutra Caderneta que não mandou o arquivo para cá.\n\n" +
+        "E.R. " + pct(m.er, 2) + " · F.F.P " + pct(m.ffp) + (m.classe ? " · " + m.classe.nome : "") +
+        "\n\nEla entra na fase da curva deste campo. Para mudar os pontos dela, abra no PC (Contagens). Se ela foi feita numa Caderneta, o PC devolve a inspeção inteira no próximo arquivo de campos."});
+    }
+    case "pf-linha": {             /* v2.5 (etapa 20): pôr/tirar linha de fêmea ou de macho */
+      if (!i) return;
+      const pf = i.pontoFixo, q = pfQtd(i), fem = b.dataset.t === "f", d = num(b.dataset.d);
+      if (d > 0) { if (fem) pf.nf = Math.min(8, q.nf + 1); else pf.nm = Math.min(3, q.nm + 1); tocar(i); salvar(); render(); return; }
+      const ks = fem ? ["F" + q.nf] : ["A", "B", "L1", "L2"].map(x => "M" + q.nm + "P-" + x);
+      const cheias = ks.filter(k => pfTemDado(pf[k])).length;
+      const nome = fem ? "Fêmea " + q.nf : "Macho " + q.nm;
+      if (cheias && !(await confirmar("Tirar a linha " + nome + "?", "Ela tem valor anotado, que será apagado.", "Tirar"))) return;
+      ks.forEach(k => { delete pf[k]; });
+      if (fem) pf.nf = Math.max(1, q.nf - 1); else pf.nm = Math.max(1, q.nm - 1);
+      tocar(i); salvar(); render(); aviso("Linha " + nome + " tirada");
+      return;
+    }
     case "pf-rep": {
       if (!i) return;
       i.pontoFixo.reps = Math.min(8, pfReps(i) + 1); tocar(i); salvar(); render();
@@ -5526,8 +5793,11 @@ async function acao(a, b, id){
     case "pdf-arquivo": return pdfComFotos(b.dataset.m);
     case "enviar": return enviarAoPC(b.dataset.m);
     case "copia": return salvarCopia();
+    case "nuvem-enviar": return enviarNuvem(!!b.dataset.trocar);
+    case "nuvem-receber": return receberNuvem(!!b.dataset.trocar);
     case "compartilhar-campos": return compartilharCampos(b.dataset.id);
     case "lic-celular": return abrirLicencaCelular();
+    case "lic-cel-pedido": return pedirLicencaCelular();
     case "copia-depois": DB.cfg.lembreteCopiaAte = Date.now() + 864e5; salvar(); render(); return;
     case "foto": { const al = alvoFotos(); if (!al) return; return tirarFoto(al, b.dataset.k === "" || b.dataset.k == null ? null : +b.dataset.k); }
     case "foto-excluir": {
@@ -5713,6 +5983,7 @@ window.addEventListener("afterprint", () => { const el = document.getElementById
 
 /* ---------------------------------------------------------------- enviar ao PC */
 async function enviarAoPC(modo){
+  await assinarPendentes(false);
   const tudo = !!(document.getElementById("enviar-tudo") || {}).checked;
   const novas = inspsParaEnviar();
   const soNovas = !tudo && novas.length > 0;
@@ -5731,6 +6002,137 @@ async function enviarAoPC(modo){
   aviso(txt + " · " + pac.inspecoes.length + " inspeção(ões)");
 }
 
+/* v2.5 (etapa 20): corrigir o número de uma inspeção travada, sem destravar os pontos */
+async function renumerarInsp(x){
+  const v = await dialogo({titulo:"Corrigir o número", html:'<p class="peq" style="margin:0 0 8px">Inspeção nº ' + esc(x.numero) + " de " + dataBR(x.data) + ". Qual é o número certo? Os pontos não mudam; o PC corrige quando receber.</p>" +
+    '<div class="f tudo"><input id="rn-n" inputmode="numeric" pattern="[0-9]*" value="' + esc(x.numero) + '" aria-label="Número certo da inspeção"></div>',
+    botoes:[{rotulo:"Cancelar", valor:null}, {rotulo:"Corrigir", valor:"ok", classe:"pri", coletar:veu => veu.querySelector("#rn-n").value}]});
+  if (v == null) return;
+  const n = Math.round(num(v));
+  if (!n || n === num(x.numero)) return;
+  const ck = checarNumeroInsp(x, n);
+  if (ck.erro) { aviso(ck.erro, null, 6000); return; }
+  if (!Array.isArray(x.historico)) x.historico = [];
+  x.historico.push({quando:Date.now(), quem:DB.usuario ? DB.usuario.codigo : "", aparelho:DB.aparelho, motivo:"Número corrigido", mudou:["nº " + x.numero + " → " + n]});
+  x.numero = n; x._numOk = n;
+  tocar(x); salvar(); render();
+  aviso("Agora é a inspeção nº " + n + ". Mande para o PC para corrigir lá também.");
+}
+/* v2.5 (etapa 20): inspeção que o PC tem (veio de uma Caderneta) e este celular não tem mais —
+   celular trocado, Caderneta reinstalada ou aberta noutra pasta. Antes ela aparecia só como
+   "do computador" e não abria; agora volta inteira (travada, já segura no PC). */
+function apagadaAqui(id){
+  return (DB.lixeira || []).some(x => x && x.dados && (x.dados.id === id || (Array.isArray(x.dados.inspecoes) && x.dados.inspecoes.some(y => y && y.id === id))));
+}
+function restaurarDoPC(lista){
+  let n = 0;
+  const meu = DB.usuario ? DB.usuario.codigo : "";
+  (Array.isArray(lista) ? lista : []).forEach(e => {
+    if (!e || !e.id || inspPor(String(e.id)) || apagadaAqui(String(e.id))) return;
+    const cod = normContrato(e.contrato), gl = normGleba(e.gleba);
+    const c = DB.campos.find(x => !x.exemplo && normContrato(x.codigo) === cod && normGleba(x.gleba) === gl && (!x.dono || x.dono === meu));
+    if (!c) return;
+    const alt = num(e.alterado) || Date.now();
+    const i = normalizarInsp(Object.assign({}, e, {id:String(e.id), campoId:c.id, fotos:[], doPC:true,
+      pontos:(e.pontos || []).map(p => Object.assign({}, p, {doPC:true})), historico:[], criado:alt}));
+    delete i.contrato; delete i.gleba;
+    Object.assign(i, {alterado:alt, enviadoEm:alt, seguroPC:alt, travada:true, autor:meu, aparelho:DB.aparelho});
+    if (!i.representante && c.rc) i.representante = c.rc;
+    if (!i.at && c.at) i.at = c.at;
+    DB.inspecoes.push(i); n++;
+  });
+  return n;
+}
+
+/* ---------------------------------------------------------------- nuvem direto (v2.5, etapa 20) */
+/* "Enviar para a nuvem" grava direto num arquivo fixo da pasta da nuvem (escolhido uma vez:
+   Drive, OneDrive…), sem passar pelo menu de compartilhar. Usa a API de arquivos do navegador
+   (Chrome no Android/PC); onde ela não existe, cai no compartilhar de sempre. O arquivo leva tudo
+   o que ainda não tem recibo do PC — se o PC não importou o anterior, nada se perde ao regravar. */
+function fsaEnvio(){ return typeof window.showSaveFilePicker === "function" && !emVisualizador() && /^https?:$/.test(location.protocol); }
+function fsaReceber(){ return typeof window.showOpenFilePicker === "function" && !emVisualizador() && /^https?:$/.test(location.protocol); }
+function nomeArqNuvem(){
+  const ap = String(DB.aparelho || "celular").replace(/[^A-Za-z0-9]/g, "").slice(-8) || "celular";
+  return MARCA_ARQ + "caderneta_nuvem_" + ap + ".vana.json";
+}
+async function permissaoArq(h, modo){
+  try {
+    if (typeof h.queryPermission !== "function") return true;
+    if ((await h.queryPermission({mode:modo})) === "granted") return true;
+    return (await h.requestPermission({mode:modo})) === "granted";
+  } catch (e) { return false; }
+}
+async function escolherDestinoNuvem(){
+  try {
+    const h = await window.showSaveFilePicker({suggestedName:nomeArqNuvem(),
+      types:[{description:"Arquivo da Caderneta", accept:{"application/json":[".json"]}}]});
+    const guardou = await idbPut("kv", h, "nuvem-envio");
+    DB.cfg.nuvemDestino = guardou ? (h.name || nomeArqNuvem()) : ""; salvar();
+    return h;
+  } catch (e) { return null; }           /* cancelou ou o navegador recusou */
+}
+async function gravarNoArquivo(h, texto){
+  const w = await h.createWritable();
+  await w.write(new Blob([texto], {type:"application/json"}));
+  await w.close();
+}
+async function enviarNuvem(trocar){
+  if (!fsaEnvio()) return enviarAoPC("auto");
+  await assinarPendentes(false);
+  const lista = Array.from(new Set(inspsNaoSeguras().concat(inspsParaEnviar())));
+  const pac = pacoteParaPC(true, lista);
+  pac.fotos = await fotosDoPacote(pac.inspecoes.concat(pac.registros || []));
+  if (!pac.inspecoes.length && !pac.campos.length && !(pac.registros || []).length && !(pac.eventos || []).length) {
+    aviso("Nada para enviar: tudo já está seguro no PC"); return; }
+  const texto = await textoProtegido(montarPacote(pac), true);
+  if (texto == null) { aviso("Envio cancelado"); return; }
+  let h = trocar ? null : await idbGet("kv", "nuvem-envio");
+  if (!h) {
+    await dialogo({titulo:"Escolher a pasta da nuvem", texto:"Na próxima tela, abra o Drive (ou o OneDrive), entre na pasta" +
+      (DB.nuvemInfo && DB.nuvemInfo.pasta ? " " + DB.nuvemInfo.pasta : " de troca do PC") + " e toque em Salvar. É só desta vez: depois a Caderneta grava direto nesse arquivo."});
+    h = await escolherDestinoNuvem();
+    if (!h) { aviso("Envio cancelado — nenhuma pasta escolhida"); return; }
+  }
+  let ok = await permissaoArq(h, "readwrite");
+  if (ok) { try { await gravarNoArquivo(h, texto); } catch (e) { ok = false; } }
+  if (!ok) {
+    /* o arquivo sumiu da nuvem, o Drive não deixou regravar ou a permissão caiu: escolhe de novo */
+    const de = await dialogo({titulo:"Não deu para gravar na nuvem", texto:"O arquivo " + (h.name || "") + " não pôde ser regravado (o Drive pode ter tirado a permissão). Escolher a pasta de novo ou mandar pelo compartilhar?",
+      botoes:[{rotulo:"Compartilhar", valor:"share"}, {rotulo:"Escolher a pasta", valor:"pasta", classe:"pri"}]});
+    if (de === "share") return enviarAoPC("auto");
+    if (de !== "pasta") return;
+    h = await escolherDestinoNuvem();
+    if (!h) { aviso("Envio cancelado"); return; }
+    try { await gravarNoArquivo(h, texto); } catch (e) { aviso("O navegador não conseguiu gravar nessa pasta. Use Enviar para o computador › Drive.", null, 7000); return; }
+  }
+  marcarEnviadas(pac.inspecoes);
+  DB.cfg.ultimoNuvem = Date.now(); salvar(); render();
+  aviso("Gravado na nuvem (" + (h.name || nomeArqNuvem()) + ") · " + pac.inspecoes.length + (pac.inspecoes.length === 1 ? " inspeção" : " inspeções") + ". No PC: ⟳ Nuvem.");
+}
+async function receberNuvem(trocar){
+  if (!fsaReceber()) return receberArquivo();
+  let h = trocar ? null : await idbGet("kv", "nuvem-receber");
+  if (!h) {
+    try {
+      const hs = await window.showOpenFilePicker({multiple:false});
+      h = hs && hs[0];
+    } catch (e) { return; }
+    if (!h) return;
+    await idbPut("kv", h, "nuvem-receber");
+    DB.cfg.nuvemOrigem = h.name || ""; salvar();
+  }
+  let f = null;
+  if (await permissaoArq(h, "read")) { try { f = await h.getFile(); } catch (e) { f = null; } }
+  if (!f) {
+    await idbApagar("kv", "nuvem-receber");
+    aviso("O arquivo do PC não foi encontrado — escolha de novo na pasta da nuvem");
+    return receberNuvem(true);
+  }
+  let d;
+  try { d = JSON.parse(await f.text()); } catch (e) { aviso("Esse arquivo não é do Vana — escolha o " + ((DB.nuvemInfo && DB.nuvemInfo.arquivo) || "campos_para_caderneta.vana.json")); await idbApagar("kv", "nuvem-receber"); return; }
+  return processarRecebido(d, f.name || "nuvem");
+}
+
 /* ---------------------------------------------------------------- compartilhar (v2.5) */
 /* Item 1: mandar campos (e as inspeções deles) para a Caderneta de um colega. Vai uma CÓPIA:
    quem recebe junta com o que tem — campo igual (mesmo id, ou mesmo contrato e gleba do mesmo
@@ -5743,18 +6145,19 @@ async function compartilharCampos(idCampo){
   const pre = idCampo || S.campoId || "";
   const temChave = !!(chaveAtualU8() && criptoDisponivel());
   const lista = meus.map(c => '<label class="chk"><input type="checkbox" class="cc-sel" value="' + esc(c.id) + '"' + (c.id === pre ? " checked" : "") + "> <span>" +
-    esc(nomeCampo(c)) + ' <span class="mut">· ' + inspsDoCampo(c.id).length + " insp.</span></span></label>").join("");
+    esc(nomeCampo(c)) + ' <span class="mut">· ' + inspsDoCampo(c.id).length + " insp." + (Array.isArray(c.limite) && c.limite.length ? " · limite" : "") + "</span></span></label>").join("");
   const r = await dialogo({titulo:"Compartilhar com outra Caderneta",
     html:'<p class="peq" style="margin:0 0 8px">Vai uma <b>cópia</b> dos campos marcados. Na outra Caderneta: <i>Dados › Receber do computador › Abrir arquivo</i>.</p>' +
       '<div class="pilha" style="gap:6px;max-height:42vh;overflow:auto">' + lista + "</div>" +
       '<label class="chk" style="margin-top:8px"><input type="checkbox" id="cc-insp" checked> <span>Com as inspeções (pontos e fotos)</span></label>' +
+      '<label class="chk"><input type="checkbox" id="cc-lim" checked> <span>Com os limites (pivô e glebas)</span></label>' +
       (temChave ? '<label class="chk"><input type="checkbox" id="cc-prot" checked> <span>Proteger com a chave de proteção (o colega vai precisar da mesma chave para abrir)</span></label>' : ""),
     botoes:[{rotulo:"Cancelar", valor:null}, {rotulo:"Compartilhar", valor:"ok", classe:"pri", coletar:veu => ({
-      ids:[].map.call(veu.querySelectorAll(".cc-sel:checked"), x => x.value), insp:!!veu.querySelector("#cc-insp").checked,
+      ids:[].map.call(veu.querySelectorAll(".cc-sel:checked"), x => x.value), insp:!!veu.querySelector("#cc-insp").checked, lim:!!veu.querySelector("#cc-lim").checked,
       prot:!!(veu.querySelector("#cc-prot") || {}).checked})}]});
   if (!r || !r.ids) return;
   if (!r.ids.length) { aviso("Marque pelo menos um campo"); return; }
-  const pac = pacoteCompartilhado(r.ids, r.insp);
+  const pac = pacoteCompartilhado(r.ids, r.insp, r.lim);
   pac.fotos = await fotosDoPacote(pac.inspecoes);
   const env = montarPacote(pac, "celular-para-celular");
   const texto = r.prot && temChave ? JSON.stringify(await cifrarTexto(JSON.stringify(env), env.tipo, chaveAtualU8())) : JSON.stringify(env);
@@ -5765,9 +6168,13 @@ async function compartilharCampos(idCampo){
   aviso(pac.campos.length + (pac.campos.length === 1 ? " campo" : " campos") + " e " + pac.inspecoes.length +
         (pac.inspecoes.length === 1 ? " inspeção" : " inspeções") + (e === "compartilhado" ? " compartilhados" : " salvos em arquivo"));
 }
-function pacoteCompartilhado(ids, comInsp){
+function pacoteCompartilhado(ids, comInsp, comLimite){
   const meu = DB.usuario ? DB.usuario.codigo : "", sel = new Set(ids);
-  const campos = DB.campos.filter(c => sel.has(c.id) && !c.exemplo).map(c => Object.assign(clone(c), {dono:c.dono || meu}));
+  const campos = DB.campos.filter(c => sel.has(c.id) && !c.exemplo).map(c => {
+    const x = Object.assign(clone(c), {dono:c.dono || meu});
+    if (comLimite === false) { x.limite = null; x.limiteNome = ""; x.divisao = null; }
+    return x;
+  });
   const insps = comInsp ? DB.inspecoes.filter(i => sel.has(i.campoId) && !i.exemplo)
     .map(i => Object.assign(clone(i), {dono:((campoPor(i.campoId) || {}).dono) || meu})) : [];
   return {formato:FORMATO, versao:2, compartilhado:true, aparelho:DB.aparelho, usuario:DB.usuario,
@@ -5792,7 +6199,7 @@ function juntarPontosInsp(local, vinda, ppp){
 function juntarCompartilhado(d){
   const meu = DB.usuario ? DB.usuario.codigo : "";
   const de = (d.usuario && d.usuario.codigo) ? String(d.usuario.codigo) : "";
-  const r = {campos:0, camposIguais:0, inspecoes:0, juntadas:0};
+  const r = {campos:0, camposIguais:0, inspecoes:0, juntadas:0, limites:0};
   const mapaId = {};
   (d.campos || []).map(normalizarCampo).forEach(c => {
     if (!c.dono) c.dono = de || meu;
@@ -5800,7 +6207,20 @@ function juntarCompartilhado(d){
     let x = campoPor(c.id);
     if (!x) x = DB.campos.find(y => !y.exemplo && normContrato(y.codigo) === normContrato(c.codigo) &&
                                      normGleba(y.gleba) === normGleba(c.gleba) && (y.dono || "") === (c.dono || "")) || null;
-    if (x) { mapaId[c.id] = x.id; r.camposIguais++; return; }
+    if (x) {
+      mapaId[c.id] = x.id; r.camposIguais++;
+      /* v2.5 (etapa 20): o limite (pivô/gleba) que veio vale se aqui não tem, ou se é outro */
+      if (Array.isArray(c.limite) && c.limite.length && JSON.stringify(c.limite) !== JSON.stringify(x.limite || null)) {
+        x.limite = c.limite; x.limiteNome = (c.limiteNome || "limite") + " (de " + (de || "colega") + ")";
+        if (c.divisao && !x.divisao) x.divisao = c.divisao;
+        x.alterado = Date.now(); r.limites++;
+      }
+      ["hibrido", "fazenda", "cooperante", "municipio", "pivo", "rc", "at", "proporcao", "area", "safra"].forEach(k => {
+        if ((x[k] === "" || x[k] == null) && c[k] !== "" && c[k] != null) x[k] = c[k]; });
+      if (c.caminho && c.caminho.forma && !(x.caminho && x.caminho.forma)) x.caminho = c.caminho;
+      return;
+    }
+    if (Array.isArray(c.limite) && c.limite.length) r.limites++;
     DB.campos.push(c); mapaId[c.id] = c.id; r.campos++;
   });
   (d.inspecoes || []).map(normalizarInsp).forEach(i => {
@@ -5838,7 +6258,8 @@ async function receberCompartilhado(d, nomeArq, silencioso){
   if (d.fotos) await gravarFotosRecebidas(d.fotos);
   salvar();
   const resumo = r.campos + (r.campos === 1 ? " campo novo" : " campos novos") + (r.camposIguais ? ", " + r.camposIguais + " já estava" + (r.camposIguais === 1 ? "" : "m") + " aqui" : "") + "; " +
-    r.inspecoes + (r.inspecoes === 1 ? " inspeção nova" : " inspeções novas") + (r.juntadas ? ", " + r.juntadas + (r.juntadas === 1 ? " juntada" : " juntadas") + " com a daqui" : "") + ".";
+    r.inspecoes + (r.inspecoes === 1 ? " inspeção nova" : " inspeções novas") + (r.juntadas ? ", " + r.juntadas + (r.juntadas === 1 ? " juntada" : " juntadas") + " com a daqui" : "") +
+    (r.limites ? "; " + r.limites + (r.limites === 1 ? " limite" : " limites") + " de campo" : "") + ".";
   if (silencioso) return resumo;
   PILHA.length = 0; ir("campos", null, {substituir:true});
   dialogo({titulo:"Recebido de " + de, texto:resumo});
@@ -5884,12 +6305,14 @@ async function processarRecebido(d, nomeArq, silencioso){
     }
     await fazerCopia("antes de receber campos do PC");
     if (up && !DB.usuario) { DB.usuario = up; extra += " Caderneta pareada com " + (up.nome || up.codigo) + " (" + up.codigo + ")."; }
-    if (d.regras && typeof d.regras === "object" && !outro) { DB.regras = d.regras; aplicarRegras(DB.regras); }   /* v2.5: regras do PC */
+    if (d.regras && typeof d.regras === "object" && !outro) { await guardarRegrasPC(d.regras); garantirRegras(); }   /* v2.5: regras do PC, guardadas cifradas */
     if (d.licenca && typeof d.licenca === "object" && !outro) DB.licenca = d.licenca;                            /* v2.5: licença do PC */
     const r = receberPacote(d, up);
     { const seg = aplicarRecibo(d.recibo, up ? up.codigo : ""); if (seg) extra += " " + seg + (seg === 1 ? " inspeção confirmada" : " inspeções confirmadas") + " no PC."; }
     if (!outro) {
       const ed = aplicarEdicoesPC(d.edicoesPC);
+      const nr = restaurarDoPC(d.inspecoesPC);                       /* v2.5 (etapa 20) */
+      if (nr) extra += " " + nr + (nr === 1 ? " inspeção que só estava no PC voltou para cá." : " inspeções que só estavam no PC voltaram para cá.");
       if (ed.atualizadas) extra += " " + ed.atualizadas + (ed.atualizadas === 1 ? " inspeção completada no PC foi atualizada aqui." : " inspeções completadas no PC foram atualizadas aqui.");
       if (ed.juntadas) extra += " " + ed.juntadas + (ed.juntadas === 1 ? " inspeção foi juntada com a do PC (mande de novo)." : " inspeções foram juntadas com as do PC (mande de novo).");
       if (d.nuvem && typeof d.nuvem === "object") DB.nuvemInfo = {pasta:String(d.nuvem.pasta || ""), arquivo:String(d.nuvem.arquivo || "")};
@@ -5916,6 +6339,7 @@ async function processarRecebido(d, nomeArq, silencioso){
   if (r && d.fotos) r.fotos = await gravarFotosRecebidas(d.fotos);
   if (!r) { aviso("Não consegui ler esse arquivo"); return; }
   salvar(); aplicarTema();
+  migrarRegras().catch(() => {});
   S.campoId = null; S.inspId = null; PILHA.length = 0;
   ir("campos", null, {substituir:true});
   aviso(esc2 === "trocar" ? "Dados trocados pelo arquivo" : r.campos + " campo(s) e " + r.inspecoes + " inspeção(ões) novos" + (r.atualizadas ? ", " + r.atualizadas + " atualizada(s)" : ""));
@@ -6815,14 +7239,15 @@ async function restaurarCopia(t){
   if (!(await confirmar("Voltar para a cópia de " + quandoTxt(t) + "?", "O que está agora no aparelho é guardado numa nova cópia antes.", "Voltar a esta"))) return;
   await fazerCopia("antes de restaurar");
   try {
-    const cfg = DB.cfg, chaves = DB.chaves, chaveAtual = DB.chaveAtual, regras = DB.regras;
+    const cfg = DB.cfg, chaves = DB.chaves, chaveAtual = DB.chaveAtual, regrasCif = DB.regrasCif, licCel = DB.licencaCel, rel = DB.relogioMax;
     let d = JSON.parse(x.txt);
     if (d && d.cifrado) d = JSON.parse(await decifrarLocal(d));
     aplicar(d); DB.cfg = Object.assign({}, CFG_PADRAO, DB.cfg, {tema:cfg.tema, sol:cfg.sol});
     if (!Object.keys(DB.chaves || {}).length) { DB.chaves = chaves; DB.chaveAtual = chaveAtual; }
-    DB.regras = DB.regras || regras;
+    DB.regrasCif = regrasCif || null; DB.licencaCel = licCel || DB.licencaCel || null; DB.relogioMax = Math.max(num(rel), num(DB.relogioMax));
   }
   catch (e) { aviso("Cópia ilegível"); return; }
+  migrarRegras().catch(() => {});
   salvar(); S.campoId = S.inspId = null; PILHA.length = 0; ir("campos", null, {substituir:true}); aviso("Cópia restaurada");
 }
 
@@ -6971,6 +7396,7 @@ async function iniciar(){
           }
         }
         const temDados = (d.campos || []).some(c => !c.exemplo) || (d.inspecoes || []).some(i => !i.exemplo);
+        DB.relogioMax = Math.max(num(DB.relogioMax), num(d.relogioMax));      /* v2.5 (etapa 20): o maior horário já visto */
         if (temDados && (semeado || (d.salvoEm || 0) > (DB.salvoEm || 0))) {
           aplicar(d); aplicarTema(); render(); aviso("Dados recuperados da cópia interna do aparelho");
         }
@@ -6983,6 +7409,9 @@ async function iniciar(){
     }
     DB.versaoApp = VERSAO_APP;
     gravarAgora();
+    migrarRegras().catch(() => {});                    /* v2.5 (etapa 20): critérios do PC, cifrados */
+    carregarLicencaCelular().catch(() => {});
+    setTimeout(() => { assinarPendentes(true); }, 2500);
     fazerCopia("ao abrir o app");
   } else { DB.versaoApp = VERSAO_APP; if (semeado || !local || anterior) gravarAgora(); }
   registrarPWA();
