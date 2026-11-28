@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-/UKw5wyogSZqhQfJVfRyJigyeOEksDzxDKtsb7V4gHQ='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src 'self' http: https://server.arcgisonline.com; font-src 'self'; worker-src 'self'; manifest-src 'self'; media-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-6fu8x+4zmoizgW42foZk1J4cSk+qkIEd/+vEepwaQU0='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src 'self' http: https://server.arcgisonline.com; font-src 'self'; worker-src 'self'; manifest-src 'self'; media-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#FFFFFF">
 <meta name="mobile-web-app-capable" content="yes">
@@ -279,6 +279,7 @@ ol.passos{margin:0;padding-left:20px;line-height:1.55;color:var(--tinta2)}ol.pas
 .foto figcaption .btn{grid-column:2;grid-row:2}
 .etq.atraso{background:var(--r2s);color:var(--r2)}
 .busca{position:relative}
+#lista-campos{display:contents}
 .busca input{width:100%;min-height:46px;padding:9px 12px 9px 38px;border:1px solid var(--linha2);border-radius:12px;background:var(--sup)}
 .busca .ico{position:absolute;left:12px;top:14px;color:var(--tinta3)}
 
@@ -4013,6 +4014,12 @@ function telaCampos(){
   h += '<div class="btns"><button class="btn pri" data-a="novo-campo">' + ico("mais") + ' Novo campo</button><button class="btn" data-a="receber">' + ico("receber") + " Receber do PC</button></div>";
   h += htmlRegioes();
   if (DB.campos.length > 5) h += '<div class="busca">' + ico("busca") + '<input id="busca" type="search" placeholder="Buscar contrato, fazenda, híbrido…" value="' + esc(S.busca) + '" autocomplete="off"></div>';
+  return h + '<div id="lista-campos">' + htmlListaCampos(lista, AG, reg) + "</div></div>";
+}
+/* v2.5: a lista é redesenhada sozinha ao digitar na busca — o campo de busca não é recriado,
+   então o teclado (numérico ou de letras) continua o mesmo que a pessoa escolheu */
+function htmlListaCampos(lista, AG, reg){
+  let h = "";
   if (!DB.campos.length) {
     h += '<div class="cartao"><div class="vazio"><h3>Nenhum campo ainda</h3><p>Receba os campos do programa do computador (com área, híbrido e limite do pivô) ou crie um campo aqui mesmo.</p></div></div>';
   } else if (!lista.length) {
@@ -4036,7 +4043,20 @@ function telaCampos(){
     });
     h += "</div>";
   }
-  return h + "</div>";
+  return h;
+}
+function filtrarListaCampos(){
+  const alvo = document.getElementById("lista-campos");
+  if (!alvo || S.tela !== "campos") { render(); return; }
+  const q = semAcento(S.busca || "").toLowerCase().trim();
+  const ativ = c => { const u = ultimaInsp(c.id); return Math.max(u ? (u.alterado || 0) : 0, c.alterado || 0); };
+  const AG = {}; DB.campos.forEach(c => { AG[c.id] = agendaDoCampo(c); });
+  const peso = c => { const a = AG[c.id]; return !a ? 3 : a.tipo === "atrasada" ? 0 : a.tipo === "hoje" ? 1 : a.tipo === "feita" ? 2 : 3; };
+  let lista = DB.campos.slice().sort((a, b) => peso(a) - peso(b) || ativ(b) - ativ(a));
+  if (q) lista = lista.filter(c => semAcento([c.codigo, c.gleba, c.fazenda, c.hibrido, c.cooperante, c.municipio, c.pivo].join(" ")).toLowerCase().indexOf(q) >= 0);
+  const reg = regiaoSel();
+  if (reg) lista = lista.filter(c => regiaoDe(c.codigo) === reg);
+  alvo.innerHTML = htmlListaCampos(lista, AG, reg);
 }
 
 /* ================================================================= CAMPO */
@@ -5589,7 +5609,7 @@ document.addEventListener("pointerdown", e => {
 document.addEventListener("input", e => {
   const el = e.target;
   if (el.dataset && el.dataset.rb && el.tagName === "TEXTAREA" || (el.dataset && el.dataset.rb && el.type === "text")) { aoMudarReg(el); return; }
-  if (el.id === "busca") { S.busca = el.value; const pos = el.selectionStart; render(); const nb = document.getElementById("busca"); if (nb) { nb.focus(); try { nb.setSelectionRange(pos, pos); } catch (x) {} } return; }
+  if (el.id === "busca") { S.busca = el.value; filtrarListaCampos(); return; }
   if (el.classList.contains("ct-n") && el.dataset.pf) { mudarPontoFixo(el); return; }
   if (el.classList.contains("ct-n")) {
     const ct = el.closest(".ct"); if (!ct) return;
