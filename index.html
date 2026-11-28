@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-XPAkgppS7nJxDTGnT9bSbCsRnCLrSnrZPlWi2nQcQGM='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src 'self' http: https://server.arcgisonline.com; font-src 'self'; worker-src 'self'; manifest-src 'self'; media-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-/UKw5wyogSZqhQfJVfRyJigyeOEksDzxDKtsb7V4gHQ='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src 'self' http: https://server.arcgisonline.com; font-src 'self'; worker-src 'self'; manifest-src 'self'; media-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#FFFFFF">
 <meta name="mobile-web-app-capable" content="yes">
@@ -41,7 +41,7 @@
   --raio:14px; --raio-p:10px;
   --tam:15px;
 }
-@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]):not([data-theme="misto"]){
   --fundo:#0B1018; --sup:#131A25; --sup2:#1A2331; --sup3:#0F151F;
   --tinta:#E6ECF5; --tinta2:#A9B4C8; --tinta3:#7C889E;
   --linha:#253042; --linha2:#36435B;
@@ -73,6 +73,28 @@
   --veu:rgb(0 0 0 / .62);
   color-scheme:dark;
 }
+/* v2.5 (etapa 21) — tema MISTO: as duas barras (topo e abas) no escuro, o conteúdo no claro,
+   sobre um fundo cinza-azulado um tom abaixo. O escuro emoldura; os números ficam no claro,
+   que se lê melhor no sol. As variáveis do escuro valem só dentro das barras. */
+:root[data-theme="misto"]{ --fundo:#D9E0EA; --sup2:#E6EBF2; --linha:#C7D0DD; color-scheme:light; }
+:root[data-theme="misto"] .topo, :root[data-theme="misto"] .abas{
+  --fundo:#0B1018; --sup:#131A25; --sup2:#1A2331; --sup3:#0F151F;
+  --tinta:#E6ECF5; --tinta2:#A9B4C8; --tinta3:#7C889E;
+  --linha:#253042; --linha2:#36435B;
+  --azul:#7FA8F5; --azul-forte:#A9C4F8; --sobre-azul:#0A1734; --azul-suave:#18294A;
+  --polen:#F2C04A; --polen-fill:#E5A800; --polen-suave:#2E2510;
+  --r0:#5BCB78; --r0s:#123220; --r0f:#2DB84B;
+  --r1:#F4C24E; --r1s:#33290F; --r1f:#F0B024;
+  --r2:#F39A72; --r2s:#3A2117; --r2f:#EC835A;
+  --r3:#F27F7F; --r3s:#3B171A; --r3f:#E05252;
+  --rn:#97A3B8; --rns:#1A2331; --rnf:#6E7686;
+  --gps:#58B9F2; --gps-suave:#0F2B3F; --campo:#15241A;
+  --sombra:0 1px 2px rgb(0 0 0 / .45), 0 10px 26px -14px rgb(0 0 0 / .8);
+  --veu:rgb(0 0 0 / .62);
+  color:var(--tinta); border-color:#253042;
+}
+:root[data-theme="misto"] .topo{ box-shadow:0 6px 18px -10px rgb(9 15 26 / .55); }
+:root[data-theme="misto"] .topo-user{ background:#2E2510; color:#F2C04A; }
 /* Modo sol: contraste máximo para ler com o sol no rosto (sempre claro) */
 :root[data-sol="1"]{
   --fundo:#FFFFFF; --sup:#FFFFFF; --sup2:#E9EDF3; --sup3:#FFFFFF;
@@ -107,6 +129,12 @@ a{color:var(--azul)}
 .topo-sub b{font-weight:600}
 .topo-user{margin-left:8px;padding:1px 8px;border-radius:999px;background:var(--azul-suave);color:var(--azul-forte);font-size:12px;font-weight:600;font-family:var(--f-texto);vertical-align:2px;letter-spacing:0;white-space:nowrap}
 .topo-acoes{display:flex;gap:6px;align-items:center}
+.nd-bt{margin-top:8px}
+.nd-bt[aria-pressed="true"]{background:var(--polen-suave);border-color:var(--polen);color:var(--polen)}
+.nd-txt{font-size:.55em;color:var(--polen);font-weight:700}
+.iso-chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip-iso{border:1px solid var(--linha2);background:var(--sup);color:var(--tinta2);border-radius:999px;padding:6px 12px;font-size:14px;font-weight:600;min-height:36px}
+.chip-iso[aria-pressed="true"]{background:var(--azul);border-color:var(--azul);color:var(--sobre-azul)}
 .btn-ico{min-width:40px;height:40px;border-radius:11px;border:1px solid var(--linha);background:var(--sup3);
   display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:0 9px;cursor:pointer;color:var(--tinta2)}
 .btn-ico:active{transform:scale(.96)}
@@ -690,8 +718,12 @@ function agregar(pontos, opc){
     const s = pts.reduce((a, p) => a + num(p.c && p.c[k]), 0);
     m.soma[k] = s; m.pct[k] = s / m.base * 100;
   });
-  const sPT = pts.reduce((a, p) => a + ptDoPonto(p, ppp), 0);
-  m.soma.PT = sPT; m.pct.PT = sPT / m.base * 100;
+  /* v2.5 (etapa 21): P.T. só dos pontos já despendoados (P.T. > 0) — bloco que ainda não foi
+     despendoado não entra (10 repetições, 3 sem despendoar → soma ÷ 7). E.R. e M.P. com todos. */
+  const comPT = pts.filter(p => !p.nd && ptDoPonto(p, ppp) > 0);       /* nd: bloco marcado "não despendoado" */
+  const sPT = comPT.reduce((a, p) => a + ptDoPonto(p, ppp), 0), bPT = comPT.reduce((a, p) => a + plantasDoPonto(p, ppp), 0);
+  m.soma.PT = sPT; m.pct.PT = bPT > 0 ? sPT / bPT * 100 : 0;
+  m.nPT = comPT.length;
   return completar(m);
 }
 function completar(m){
@@ -851,6 +883,25 @@ function pontosRecomendados(area){
    Ida e volta: metade dos pontos na ida e metade na volta. */
 /* v2.4 — gleba de uma divisão (opt = {areaGleba, forma, extensao}): fatia ou meio ("setor") anda
    do centro à borda (o raio); "faixa" ou "parte" usa a extensão da própria gleba no sentido da ida. */
+/* v2.5 (etapa 21): 2ª conta — a mesma com ~10 blocos a menos (entra ~4 blocos antes do 1º ponto e
+   para antes da borda no último). Os pontos se dividem pelos dois lados: 21 → 11 na ida e 10 na volta. */
+function comEntrada(d, largura){
+  if (!d) return d;
+  const e = Math.max(0, num((DB && DB.cfg && DB.cfg.blocosEntrada) != null && DB.cfg.blocosEntrada !== "" ? DB.cfg.blocosEntrada : 10, 10));
+  const uteis = Math.max(d.blocos - e, 1), n = Math.round(num(d.pontos));
+  const ida = d.idaVolta ? Math.ceil(n / 2) : n, volta = d.idaVolta ? Math.floor(n / 2) : 0;
+  const pul = k => k ? Math.max(1, Math.floor(uteis / k + 1e-9)) : null;
+  d.entrada = e; d.blocosUteis = uteis; d.ptsIda = ida; d.ptsVolta = volta;
+  d.pularIda = pul(ida); d.pularVolta = pul(volta);
+  d.metrosIda = d.pularIda ? d.pularIda * largura : null; d.metrosVolta = d.pularVolta ? d.pularVolta * largura : null;
+  return d;
+}
+function textoEntrada(cb){
+  if (!cb || cb.pularIda == null) return "";
+  if (!cb.ptsVolta) return cb.ptsIda + " pontos: pular " + cb.pularIda;
+  if (cb.ptsIda === cb.ptsVolta) return cb.ptsIda + " por lado: pular " + cb.pularIda;
+  return "ida " + cb.ptsIda + " pts: " + cb.pularIda + " · volta " + cb.ptsVolta + " pts: " + cb.pularVolta;
+}
 function caminhamentoBlocos(areaHa, largura, pontos, gleba, idaVolta, opt){
   areaHa = num(areaHa); largura = num(largura); opt = opt || {};
   if (!areaHa || !largura) return null;
@@ -859,8 +910,8 @@ function caminhamentoBlocos(areaHa, largura, pontos, gleba, idaVolta, opt){
     const ag = num(opt.areaGleba), pts = num(pontos) || pontosRecomendados(ag);
     const ext = num(opt.extensao) || Math.sqrt(ag * 1e4), blocos = ext / largura, pp = idaVolta ? pts / 2 : pts;
     const pular = blocos / pp, pularInt = Math.max(1, Math.floor(pular + 1e-9));
-    return {raio:null, extensao:ext, blocos, pontos:pts, porPerna:pp, pular, pularInt, metrosInt:pularInt * largura,
-            metros:pular * largura, gleba:true, idaVolta:!!idaVolta, areaContada:ag, formaGleba:opt.forma};
+    return comEntrada({raio:null, extensao:ext, blocos, pontos:pts, porPerna:pp, pular, pularInt, metrosInt:pularInt * largura,
+            metros:pular * largura, gleba:true, idaVolta:!!idaVolta, areaContada:ag, formaGleba:opt.forma}, largura);
   }
   const areaContada = gleba ? (num(opt.areaGleba) || areaHa / 2) : areaHa;
   pontos = num(pontos) || pontosRecomendados(areaContada);
@@ -871,8 +922,8 @@ function caminhamentoBlocos(areaHa, largura, pontos, gleba, idaVolta, opt){
   const pular = blocos / porPerna;
   /* v2.4: no campo se pulam blocos INTEIROS — arredonda para baixo, para o caminhamento caber no campo */
   const pularInt = Math.max(1, Math.floor(pular + 1e-9));
-  return {raio, extensao, blocos, pontos, porPerna, pular, pularInt, metrosInt: pularInt * largura, metros: pular * largura,
-          gleba: !!gleba, idaVolta: !!idaVolta, areaContada};
+  return comEntrada({raio, extensao, blocos, pontos, porPerna, pular, pularInt, metrosInt: pularInt * largura, metros: pular * largura,
+          gleba: !!gleba, idaVolta: !!idaVolta, areaContada}, largura);
 }
 
 /* =================================================== fase da curva */
@@ -1026,8 +1077,10 @@ function mensagemWhatsapp(ctx){
     "NÚMERO: " + i.numero,
     "CAMPO: " + campo,
     "REPRESENTANTE DE CAMPO: " + rc,
-    "HÍBRIDO: " + hib,
-    "*SITUACAO DO CAMPO: " + semAcentoMaius(situacao) + "*"];
+    "HÍBRIDO: " + hib];
+  const iso = fraseIsolado(c);                       /* v2.5 (etapa 21) */
+  if (iso) L.push(iso);
+  L.push("*SITUACAO DO CAMPO: " + semAcentoMaius(situacao) + "*");
   const stS = statusExtras(i, "s");
   if (stS.length) L.push("*STATUS: " + stS.join(" / ") + "*");        /* v2.5: status extras */
   L.push("", "*CONTAGEM:*");
@@ -1153,7 +1206,7 @@ const CFG_PADRAO = {
   gpsLigado:true, gpsTrilha:true, gpsPrecisao:30,
   msgDecimal:".", msgMaiusculas:true, msgRecomendacao:"risco", msgProxima:false,
   ultimoEnvio:0, ultimaCopiaArq:0,
-  nomeAparelho:"", pinMin:15, regiao:"", pfArranjo:"lados", apelido:""
+  nomeAparelho:"", pinMin:15, regiao:"", pfArranjo:"lados", apelido:"", blocosEntrada:10
 };
 
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
@@ -2035,7 +2088,7 @@ function migrarV1(d){
   const db = novoDB();
   const c1 = d.cfg || {};
   db.cfg.plantasPorPonto = num(c1.plantasPorPonto, 100) || 100;
-  if (c1.tema === "dark" || c1.tema === "light") db.cfg.tema = c1.tema;
+  if (c1.tema === "dark" || c1.tema === "light" || c1.tema === "misto") db.cfg.tema = c1.tema;
   db.campos = (d.campos || []).map(c => {
     const n = novoCampo();
     const coord = lerCoord(c.coordenadas || "");
@@ -2537,7 +2590,8 @@ function campoParaPC(c){
     exportacao:c.exportacao, plantioIni:c.plantio, plantioFim:c.plantioFim, rc:c.rc, at:c.at,
     lat:c.lat, lon:c.lon, coordenadas:(c.lat != null && c.lon != null) ? c.lat.toFixed(6) + ", " + c.lon.toFixed(6) : "",
     limite:(c.origem === "celular" || (c.divisao && c.divisao.origem === "celular")) ? c.limite : null, obs:c.obs,
-    divisao:c.divisao || null};
+    divisao:c.divisao || null,
+    isoGlebas:c.isoGlebas || [], isoContratos:c.isoContratos || [], isoTexto:c.isoTexto || "", isoEm:num(c.isoEm)};
 }
 /* v2.5 (etapa 20): cada inspeção é assinada com a chave deste aparelho (que não sai dele). O PC
    confere: número mexido fora da Caderneta (no armazenamento do navegador, num arquivo editado)
@@ -2550,7 +2604,7 @@ function textoAssinavel(i){
   const c = campoPor(i.campoId) || {}, pf = {}, P = i.pontoFixo || {};
   Object.keys(P).sort().forEach(k => { const v = P[k]; if (!RE_PF_CANON.test(k) || !Array.isArray(v)) return; const vals = v.map(canonNum); if (vals.some(x => x !== null)) pf[k] = vals; });
   return JSON.stringify({v:1, id:String(i.id || ""), contrato:normContrato(c.codigo), gleba:normGleba(c.gleba), numero:canonNum(i.numero), data:String(i.data || ""),
-    pontos:(i.pontos || []).map(p => ({f:pontoFeito(p) ? 1 : 0, a:canonNum(p.avaliadas), c:canonObj(p.c), g:p.gps && p.gps.lat != null ? [canonNum(p.gps.lat), canonNum(p.gps.lon)] : null})),
+    pontos:(i.pontos || []).map(p => Object.assign({f:pontoFeito(p) ? 1 : 0, a:canonNum(p.avaliadas), c:canonObj(p.c), g:p.gps && p.gps.lat != null ? [canonNum(p.gps.lat), canonNum(p.gps.lon)] : null}, p.nd ? {d:1} : {})),
     cam:canonObj(i.caminhamento), seco:canonNum(i.estigmaSeco), pf:pf});
 }
 async function assinarInsp(i){
@@ -2767,7 +2821,7 @@ function planilhaCaderneta(insps){
   insps.forEach(i => { const c = CC(i), ppp = pppDo(c); i.pontos.forEach(p => {
     if (!pontoFeito(p)) return;
     const g = p.gps && p.gps.fonte !== "simulado" ? p.gps : null;
-    linP.push(ident(i).concat([p.i, plantasDoPonto(p, ppp)], chP.map(([k]) => k === "PT" ? ptDoPonto(p, ppp) : num(p.c[k])),
+    linP.push(ident(i).concat([p.i, plantasDoPonto(p, ppp)], chP.map(([k]) => k === "PT" ? (p.nd ? "não desp." : ptDoPonto(p, ppp)) : num(p.c[k])),
       [g ? +g.lat.toFixed(7) : null, g ? +g.lon.toFixed(7) : null, g && g.acc != null ? Math.round(g.acc) : null,
        p.t ? new Date(p.t).toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"}) : "", p.obs || ""]));
   }); });
@@ -2832,6 +2886,10 @@ function receberPacote(d, dono){
     if (Array.isArray(pc.limite) && pc.limite.length && !manterDivisao) { c.limite = pc.limite; c.limiteNome = pc.limiteNome || "limite do PC"; }
     if (Array.isArray(pc.historico)) { c.historico = pc.historico; res.historico += pc.historico.length; }
     if (dono) { c.dono = dono.codigo; c.donoNome = dono.nome || ""; }
+    if (num(pc.isoEm) > num(c.isoEm)) {                      /* v2.5 (etapa 21): isolado por (vale o mais novo) */
+      c.isoGlebas = Array.isArray(pc.isoGlebas) ? pc.isoGlebas : []; c.isoContratos = Array.isArray(pc.isoContratos) ? pc.isoContratos : [];
+      c.isoTexto = pc.isoTexto || ""; c.isoEm = num(pc.isoEm);
+    }
     c.alterado = Date.now();
     /* v2.5 (etapa 20): inspeção feita antes de o campo ter RC/AT fica com os do campo (o PC faz o mesmo) */
     DB.inspecoes.forEach(i => { if (i.campoId !== c.id || i.exemplo) return;
@@ -4030,6 +4088,7 @@ function telaCampo(){
   h += "</div>";
   h += secCaminhamento(c);
   h += secLimite(c);
+  h += secIsolado(c);
   h += secGlebas(c);
   h += secRegistros(c);
   h += sec("sec-dados-campo", "Dados do campo", esc([c.safra ? (/^\d+$/.test(String(c.safra)) ? "VER " + c.safra : c.safra) : "", c.pivo ? "pivô " + c.pivo : "", c.proporcao].filter(Boolean).join(" · ")), formCampo(c), {aberto:!c.codigo});
@@ -4078,16 +4137,68 @@ function secCaminhamento(c){
   let corpo = '<div class="pilha" style="gap:10px">';
   corpo += '<div class="tiles">' + tile("Pontos", n, num(c.nPontos) ? "informado no campo" : (num(c.area) ? "pela área (" + fmtNum(num(c.area), 0) + " ha)" : "padrão — informe a área")) +
     tile("Pular", cb ? cb.pularInt + " blocos" : "—", cb ? "≈ " + fmtNum(cb.metrosInt, 0) + " m · bloco de " + fmtNum(larguraDo(c), 2) + " m" : "informe a área") +
+    tile("Com a entrada", cb && cb.pularIda ? (cb.ptsVolta && cb.pularIda !== cb.pularVolta ? cb.pularIda + " / " + cb.pularVolta : cb.pularIda) + " blocos" : "—",
+      cb && cb.pularIda ? (cb.ptsVolta ? "ida " + cb.ptsIda + " · volta " + cb.ptsVolta + " pontos" : cb.ptsIda + " pontos") + " · " + fmtNum(cb.entrada, 0) + " blocos a menos" : "") +
     tile("Por perna", cb ? fmtNum(cb.porPerna, 1).replace(",0", "") : "—", "ida e volta") + "</div>";
   if (cb) corpo += '<div class="nota">' + (cb.formaGleba
       ? "Gleba (" + (cb.formaGleba === "faixa" ? "faixa" : "parte marcada") + ", " + fmtNum(num(c.area), 1) + " ha): " + fmtNum(cb.extensao, 0) + " m no sentido da ida ÷ " + fmtNum(larguraDo(c), 1) + " m de bloco = " + fmtNum(cb.blocos, 0) + " blocos. "
       : c.gleba
       ? "Gleba: raio do pivô " + fmtNum(cb.raio, 0) + " m (da divisa à borda, <b>sem multiplicar por 2</b>) ÷ " + fmtNum(larguraDo(c), 1) + " m de bloco = " + fmtNum(cb.blocos, 0) + " blocos. "
       : "Pivô inteiro: " + fmtNum(cb.extensao, 0) + " m de uma borda à outra (2 × raio) ÷ " + fmtNum(larguraDo(c), 1) + " m de bloco = " + fmtNum(cb.blocos, 0) + " blocos. ") +
-      n + " pontos, metade na ida e metade na volta → " + fmtNum(cb.pular, 1) + ", arredondado para baixo: <b>pular " + cb.pularInt + " blocos inteiros</b>.</div>";
+      n + " pontos, metade na ida e metade na volta → " + fmtNum(cb.pular, 1) + ", arredondado para baixo: <b>pular " + cb.pularInt + " blocos inteiros</b>." +
+      (cb.pularIda ? "<br><b>Com a entrada no campo</b> (~4 blocos antes do 1º ponto e antes da borda no último: " + fmtNum(cb.entrada, 0) + " blocos a menos → " + fmtNum(cb.blocosUteis, 0) + " blocos): " +
+        (cb.ptsVolta ? "ida com " + cb.ptsIda + " pontos → <b>pular " + cb.pularIda + "</b> (≈ " + fmtNum(cb.metrosIda, 0) + " m); volta com " + cb.ptsVolta + " pontos → <b>pular " + cb.pularVolta + "</b> (≈ " + fmtNum(cb.metrosVolta, 0) + " m)."
+                     : cb.ptsIda + " pontos → <b>pular " + cb.pularIda + "</b> (≈ " + fmtNum(cb.metrosIda, 0) + " m).") : "") + "</div>";
   corpo += '<div class="linha"><span class="cresce peq">Forma: <b>' + esc((FORMA[forma] || FORMA.diamante)[1]) + "</b></span>" +
     '<button class="btn peq" data-a="ir" data-para="mapa">' + ico("mapa") + " Ver no mapa</button></div></div>";
-  return sec("sec-caminho", "Caminhamento e pontos", cb ? "pular " + cb.pularInt + " blocos" : n + " pontos", corpo);
+  return sec("sec-caminho", "Caminhamento e pontos", cb ? "pular " + cb.pularInt + " blocos" + (cb.pularIda ? " (com entrada: " + textoEntrada(cb) + ")" : "") : n + " pontos", corpo);
+}
+/* v2.5 (etapa 21): por quem o campo é isolado — outras glebas do mesmo pivô e contratos ao lado.
+   Vai numa linha da mensagem ("ISOLADO PELA GLEBA 2 E PELO CONTRATO M4V2708 AO LADO"); anda com o
+   campo para o PC e de volta (vale o mais novo, isoEm). */
+function posCampo(c){
+  if (c && c.lat != null && c.lon != null) return {lat:num(c.lat), lon:num(c.lon)};
+  try { if (c && Array.isArray(c.limite) && c.limite.length) return centroLL(c.limite); } catch (e) {}
+  return null;
+}
+function isoE(itens){ return itens.length === 1 ? itens[0] : itens.slice(0, -1).join(", ") + " E " + itens[itens.length - 1]; }
+function fraseIsolado(c){
+  if (!c) return "";
+  if (String(c.isoTexto || "").trim()) return String(c.isoTexto).trim().toUpperCase();
+  const gl = (c.isoGlebas || []).map(g => { const m = String(g).match(/\d+/); return m ? String(+m[0]) : String(g).toUpperCase(); });
+  const ct = (c.isoContratos || []).map(x => String(x).toUpperCase());
+  const partes = [];
+  if (gl.length) partes.push((gl.length === 1 ? "PELA GLEBA " : "PELAS GLEBAS ") + isoE(gl));
+  if (ct.length) partes.push((ct.length === 1 ? "PELO CONTRATO " : "PELOS CONTRATOS ") + isoE(ct) + " AO LADO");
+  return partes.length ? "ISOLADO " + partes.join(" E ") : "";
+}
+function sugestoesIsolado(c){
+  const cod = normContrato(c.codigo), gl = normGleba(c.gleba);
+  const glebas = [...new Set(DB.campos.filter(x => !x.exemplo && normContrato(x.codigo) === cod && x.gleba && normGleba(x.gleba) !== gl).map(x => normGleba(x.gleba)))].sort();
+  const p0 = posCampo(c), perto = [];
+  if (p0) DB.campos.forEach(x => {
+    if (x.exemplo || normContrato(x.codigo) === cod) return;
+    const p = posCampo(x); if (!p) return;
+    const km = distM(p0, p) / 1000;
+    if (km <= 3 && !perto.some(y => y.v === normContrato(x.codigo))) perto.push({v:normContrato(x.codigo), km:km});
+  });
+  perto.sort((a, b) => a.km - b.km);
+  return {glebas:glebas, contratos:perto.slice(0, 8)};
+}
+function secIsolado(c){
+  const s = sugestoesIsolado(c), selG = new Set(c.isoGlebas || []), selC = new Set(c.isoContratos || []);
+  const chip = (t, v, rot, on) => '<button type="button" class="chip-iso" data-a="iso-t" data-t="' + t + '" data-v="' + esc(v) + '" aria-pressed="' + on + '">' + esc(rot) + "</button>";
+  const glebas = [...new Set(s.glebas.concat(c.isoGlebas || []))];
+  const conts = s.contratos.map(x => ({v:x.v, rot:x.v + " · " + fmtNum(x.km, 1) + " km"}));
+  (c.isoContratos || []).forEach(v => { if (!conts.some(x => x.v === v)) conts.push({v:v, rot:v}); });
+  const fr = fraseIsolado(c);
+  const corpo = '<div class="pilha" style="gap:10px"><p class="peq" style="margin:0;color:var(--tinta2)">Marque o que isola este campo: outra gleba do mesmo pivô ou um contrato ao lado (os de até 3 km aparecem aqui). Vai numa linha da mensagem.</p>' +
+    '<div class="iso-chips">' + glebas.map(g => chip("g", g, "Gleba " + String(g).replace(/^G/i, ""), selG.has(g))).join("") + conts.map(x => chip("c", x.v, x.rot, selC.has(x.v))).join("") + "</div>" +
+    '<div class="linha"><input id="iso-novo" class="cresce" placeholder="outro contrato (ex.: M4V2708)" maxlength="20" autocapitalize="characters" aria-label="Outro contrato ao lado">' +
+    '<button class="btn peq" data-a="iso-add">' + ico("mais") + " Pôr</button></div>" +
+    fIn("campo.isoTexto", "Ou escreva do seu jeito (substitui)", c.isoTexto, {ph:"isolado por mata, por estrada…", tudo:true}) +
+    '<div class="nota">' + (fr ? "<b>Na mensagem:</b> " + esc(fr) : "Nada marcado: a mensagem sai sem a linha de isolamento.") + "</div></div>";
+  return sec("sec-isolado", "Isolado por", fr ? fr.replace(/^ISOLADO /, "").toLowerCase() : "não informado", corpo);
 }
 function secLimite(c){
   const f = formaDoCampo(c);
@@ -4170,7 +4281,7 @@ function telaInsp(){
   i.pontos.forEach((p, k) => {
     const feito = pontoFeito(p), pol = polDoPonto(p), cl = feito ? (pol > 0 ? " pol" : " feito") : "";
     g += '<button class="pt' + cl + (k === prox ? " atual" : "") + '" data-a="abrir-ponto" data-k="' + k + '" aria-label="Ponto ' + p.i + '"><b>' + p.i + "</b><small>" +
-      (feito ? (pol > 0 ? pol + " pol" : "P.T. " + ptDoPonto(p, pppDo(c))) : "—") + "</small>" + (p.gps ? '<span class="g' + (p.gps.fonte === "simulado" ? " sim" : "") + '"></span>' : "") + "</button>";
+      (feito ? (pol > 0 ? pol + " pol" : p.nd ? "não desp." : "P.T. " + ptDoPonto(p, pppDo(c))) : "—") + "</small>" + (p.gps ? '<span class="g' + (p.gps.fonte === "simulado" ? " sim" : "") + '"></span>' : "") + "</button>";
   });
   g += '</div><div class="btns" style="margin-top:11px"><button class="btn peq" data-a="add-ponto">' + ico("mais") + ' Ponto</button><button class="btn peq" data-a="rem-ponto">Tirar último vazio</button></div>' +
        '<p class="peq mut" style="margin:10px 0 0">Ponto sem nenhum pendão também conta: abra e toque em <b>Concluir</b> (fica P.T. 100).</p>';
@@ -4367,7 +4478,10 @@ function telaPonto(){
   let h = '<div class="pt-cab"><div class="pt-nav">' + voltar("insp") + '<h2 class="cresce">Ponto ' + p.i + " <small>de " + i.pontos.length + "</small></h2>" +
     '<button class="btn-ico" data-a="ponto-ir" data-d="-1" aria-label="Ponto anterior"' + (k <= 0 ? " disabled" : "") + ">" + ico("esq") + "</button>" +
     '<button class="btn-ico" data-a="ponto-ir" data-d="1" aria-label="Próximo ponto"' + (k >= i.pontos.length - 1 ? " disabled" : "") + ">" + ico("dir") + "</button></div>" +
-    '<div id="pt-soma">' + htmlSomaPonto(i, p, c) + "</div></div>";
+    '<div id="pt-soma">' + htmlSomaPonto(i, p, c) + "</div>" +
+    /* v2.5 (etapa 21): bloco que ainda não foi despendoado — o P.T. dele (que começa em 100) não entra na média */
+    '<button class="btn peq nd-bt" data-a="ponto-nd" aria-pressed="' + (p.nd ? "true" : "false") + '">' + (p.nd ? "✓ " : "") + "Bloco não despendoado</button>" +
+    (p.nd ? '<p class="peq mut" style="margin:4px 0 0">Fora da média do P.T.; E.R., machos e pendões contam normalmente.</p>' : "") + "</div>";
   h += '<div class="pilha">';
   h += '<div id="pt-gps" class="pt-gps">' + htmlGpsPonto(i, p) + "</div>";
   h += '<div class="cartao"><div class="ct-tit" style="padding-top:12px"><span class="rotulo">Fêmea com pendão — entram na soma das ' + plantasDoPonto(p, pppDo(c)) + " plantas</span></div>" + gruposTipos("pt", p.c) + "</div>";
@@ -4399,7 +4513,7 @@ function htmlSomaPonto(i, p, c){
 function htmlSomaDin(i, p, c){
   const ppp = pppDo(c), av = plantasDoPonto(p, ppp), soma = somaPendoes(p), pt = Math.max(0, av - soma), ok = soma <= av;
   const m = metricas(i, c);
-  return '<div><div class="rotulo">P.T. (pendão tirado)</div><div class="grande ' + (ok ? "" : "mal") + '">' + pt + "</div></div>" +
+  return '<div><div class="rotulo">P.T. (pendão tirado)</div><div class="grande ' + (ok ? "" : "mal") + '">' + (p.nd ? '<span class="nd-txt">não desp.</span>' : pt) + "</div></div>" +
     '<div style="text-align:right"><div class="rotulo">Soma</div><div class="grande ' + (ok ? "ok" : "mal") + '">' + (pt + soma) + "</div></div>" +
     '<div class="peq" style="grid-column:1/-1;color:' + (ok ? "var(--tinta2)" : "var(--r3)") + '">' + (ok ? (soma ? soma + " pendão(ões) no ponto · " : "nenhum pendão no ponto · ") : "⚠ Pendões (" + soma + ") passam das plantas avaliadas (" + av + ") · ") +
     "parcial: F.F.P " + pct(m.ffp) + " · " + esc(m.classe.nome) + " · " + m.n + "/" + m.previstos + " pontos" + (pontoFeito(p) ? " · ✓ contado" : "") + "</div>";
@@ -4531,7 +4645,7 @@ function telaRel(){
   const ctx = contexto(i), c = ctx.campo, m = ctx.met, msg = mensagemWhatsapp(ctx);
   let h = '<div class="cab">' + voltar("insp") + '<div class="cresce"><h2>Relatório nº ' + esc(i.numero) + '</h2><div class="sub">' + esc(nomeCampo(c)) + " · " + dataBR(i.data) + "</div></div></div>";
   h += '<div class="pilha">' + htmlRisco(ctx);
-  let t = '<div class="tiles">' + tile("E.R.", pct(m.er, 2), ctx.fase.codigo !== "sem" ? ctx.fase.texto.split(" —")[0] : "") + tile("P.T.", pct(m.pt, 2), PENDAO_TIRADO_META != null ? "meta " + fmtPct(PENDAO_TIRADO_META, 1) : "");
+  let t = '<div class="tiles">' + tile("E.R.", pct(m.er, 2), ctx.fase.codigo !== "sem" ? ctx.fase.texto.split(" —")[0] : "") + tile("P.T.", pct(m.pt, 2), [m.nPT != null && m.nPT < m.n ? m.nPT + " de " + m.n + " pontos já despendoados" : "", PENDAO_TIRADO_META != null ? "meta " + fmtPct(PENDAO_TIRADO_META, 1) : ""].filter(Boolean).join(" · "));
   MACHOS.forEach((k, j) => { if (m.pct[k] != null) t += tile("M.P." + (j + 1), pct(m.pct[k], 2), "macho " + (j + 1)); });
   t += tile("Atíp. pol.", pct(m.atip, 3), "rogue + tiguera") + tile("Nota desp.", m.notaDesp || "—", "1 / 5 / 9", "i-desp") + tile("Nota atíp.", m.notaAtip || "—", "1 / 5 / 9", "i-atip") + "</div>";
   h += t;
@@ -4819,7 +4933,7 @@ function htmlLixeira(){
 function htmlAjustes(){
   const c = DB.cfg;
   return '<div class="pilha" style="gap:12px"><div class="linha"><span class="cresce">Tema</span><div class="seg" role="group" aria-label="Tema">' +
-    [["auto", "Automático"], ["light", "Claro"], ["dark", "Escuro"]].map(([v, r]) => '<button type="button" data-a="tema" data-v="' + v + '" aria-pressed="' + (c.tema === v) + '">' + r + "</button>").join("") + "</div></div>" +
+    [["auto", "Automático"], ["light", "Claro"], ["dark", "Escuro"], ["misto", "Misto"]].map(([v, r]) => '<button type="button" data-a="tema" data-v="' + v + '" aria-pressed="' + (c.tema === v) + '">' + r + "</button>").join("") + "</div></div>" +
     fChk("cfg.sol", "<b>Modo sol</b> — contraste máximo para ler no sol forte", c.sol) +
     fChk("cfg.vibrar", "Vibrar ao tocar em + e −", c.vibrar) +
     fChk("cfg.telaAcesa", "Manter a tela acesa durante a contagem", c.telaAcesa) +
@@ -4827,7 +4941,8 @@ function htmlAjustes(){
     fChk("cfg.mostrarFP", "Mostrar F.P. (flor precoce) nos pontos", c.mostrarFP) +
     '<div class="form">' + fIn("cfg.representante", "Representante padrão (RC)", c.representante, {}) + fIn("cfg.at", "AT padrão", c.at, {}) +
     fIn("cfg.jaleco", "Nº do jaleco", c.jaleco, {}) + fIn("cfg.plantasPorPonto", "Plantas por ponto (novos campos)", c.plantasPorPonto, {t:"i"}) +
-    fIn("cfg.larguraBloco", "Largura do bloco (m)", c.larguraBloco, {t:"n"}) + fSel("cfg.machos", "Machos (novos campos)", [[1, "1"], [2, "2"], [3, "3"]], c.machos, {t:"i"}) +
+    fIn("cfg.larguraBloco", "Largura do bloco (m)", c.larguraBloco, {t:"n"}) +
+    fIn("cfg.blocosEntrada", "Blocos a menos (entrada)", c.blocosEntrada, {t:"i", dica:"2ª conta do pular: ~4 blocos ao entrar no 1º ponto e antes da borda no último"}) + fSel("cfg.machos", "Machos (novos campos)", [[1, "1"], [2, "2"], [3, "3"]], c.machos, {t:"i"}) +
     fSel("cfg.pfArranjo", "Arranjo do ponto fixo", [["lados", "Macho 1 e 2 dos dois lados"], ["linhas", "Macho 1 (L1, L2) · fêmeas · Macho 2 (L1, L2)"]], c.pfArranjo || "lados", {tudo:true}) + "</div>" +
     '<div class="rotulo">GPS</div>' + fChk("cfg.gpsLigado", "Ligar o GPS sozinho ao abrir uma inspeção", c.gpsLigado) +
     fChk("cfg.gpsTrilha", "Gravar a trilha andada", c.gpsTrilha) +
@@ -5355,10 +5470,10 @@ function aplicarTema(){
   if (DB.cfg.sol) { r.setAttribute("data-sol", "1"); r.setAttribute("data-theme", "light"); temaPosto = true; }
   else {
     r.removeAttribute("data-sol");
-    if (DB.cfg.tema === "dark" || DB.cfg.tema === "light") { r.setAttribute("data-theme", DB.cfg.tema); temaPosto = true; }
+    if (DB.cfg.tema === "dark" || DB.cfg.tema === "light" || DB.cfg.tema === "misto") { r.setAttribute("data-theme", DB.cfg.tema); temaPosto = true; }
     else if (temaPosto) { r.removeAttribute("data-theme"); temaPosto = false; }
   }
-  const escuro = r.getAttribute("data-theme") === "dark" || (!r.getAttribute("data-theme") && matchMedia("(prefers-color-scheme: dark)").matches);
+  const escuro = r.getAttribute("data-theme") === "dark" || r.getAttribute("data-theme") === "misto" || (!r.getAttribute("data-theme") && matchMedia("(prefers-color-scheme: dark)").matches);
   const m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute("content", escuro ? "#131A25" : "#FFFFFF");
   const bs = document.getElementById("b-sol"); if (bs) bs.setAttribute("aria-pressed", DB.cfg.sol ? "true" : "false");
 }
@@ -5395,6 +5510,7 @@ function aoMudarBind(el, fim){
     a.obj[a.chave] = valorDe(el);
   }
   if (path === "campo.caminho.forma") a.obj.graus = null;
+  if (path === "campo.isoTexto") a.raiz.isoEm = Date.now();          /* v2.5 (etapa 21): vale o mais novo */
   if (path === "campo.codigo") { a.raiz.codigo = fim ? normContrato(a.raiz.codigo) : String(a.raiz.codigo).toUpperCase().trimStart(); if (fim) el.value = a.raiz.codigo; }
   if (path === "campo.gleba") { a.raiz.gleba = fim ? normGleba(a.raiz.gleba) : String(a.raiz.gleba).toUpperCase().trim(); if (fim) el.value = a.raiz.gleba; }
   if (path === "insp.numero" && fim) {
@@ -5602,6 +5718,29 @@ async function acao(a, b, id){
       return dialogo({titulo:"Inspeção nº " + hh.numero + " · " + dataBR(hh.data), texto:"Esta inspeção está no computador: foi lançada lá, ou feita noutra Caderneta que não mandou o arquivo para cá.\n\n" +
         "E.R. " + pct(m.er, 2) + " · F.F.P " + pct(m.ffp) + (m.classe ? " · " + m.classe.nome : "") +
         "\n\nEla entra na fase da curva deste campo. Para mudar os pontos dela, abra no PC (Contagens). Se ela foi feita numa Caderneta, o PC devolve a inspeção inteira no próximo arquivo de campos."});
+    }
+    case "ponto-nd": {             /* v2.5 (etapa 21): bloco ainda não despendoado */
+      if (!i) return;
+      if (inspTravada(i)) { aviso("Inspeção travada: toque em Editar para mudar"); return; }
+      const p = i.pontos[S.pontoIdx]; if (!p) return;
+      p.nd = !p.nd; if (!p.nd) delete p.nd;
+      tocar(i); salvar(); render();
+      aviso(p.nd ? "Ponto " + p.i + ": bloco não despendoado — fora do P.T." : "Ponto " + p.i + " volta a entrar no P.T.");
+      return;
+    }
+    case "iso-t": case "iso-add": {           /* v2.5 (etapa 21): isolado por */
+      const c = campoAtual(); if (!c) return;
+      c.isoGlebas = Array.isArray(c.isoGlebas) ? c.isoGlebas : []; c.isoContratos = Array.isArray(c.isoContratos) ? c.isoContratos : [];
+      if (a === "iso-add") {
+        const v = normContrato((document.getElementById("iso-novo") || {}).value || "");
+        if (!v) { aviso("Digite o código do contrato ao lado"); return; }
+        if (!c.isoContratos.includes(v)) c.isoContratos.push(v);
+      } else {
+        const lst = b.dataset.t === "g" ? c.isoGlebas : c.isoContratos, v = b.dataset.v, k = lst.indexOf(v);
+        if (k >= 0) lst.splice(k, 1); else lst.push(v);
+      }
+      c.isoEm = Date.now(); c.alterado = Date.now(); salvar(); render();
+      return;
     }
     case "pf-linha": {             /* v2.5 (etapa 20): pôr/tirar linha de fêmea ou de macho */
       if (!i) return;
