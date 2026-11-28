@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-6fu8x+4zmoizgW42foZk1J4cSk+qkIEd/+vEepwaQU0='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src 'self' http: https://server.arcgisonline.com; font-src 'self'; worker-src 'self'; manifest-src 'self'; media-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-1SbYolB4/mxIDQlc/GSODzSMoTdFixvFffeHjp55anc='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src 'self' http: https://server.arcgisonline.com; font-src 'self'; worker-src 'self'; manifest-src 'self'; media-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#FFFFFF">
 <meta name="mobile-web-app-capable" content="yes">
@@ -129,7 +129,14 @@ a{color:var(--azul)}
 .topo-sub b{font-weight:600}
 .topo-user{margin-left:8px;padding:1px 8px;border-radius:999px;background:var(--azul-suave);color:var(--azul-forte);font-size:12px;font-weight:600;font-family:var(--f-texto);vertical-align:2px;letter-spacing:0;white-space:nowrap}
 .topo-acoes{display:flex;gap:6px;align-items:center}
-.nd-bt{margin-top:8px}
+.pt-acoes{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.pt-acoes .btn{flex:1 1 0;min-width:0}
+.cam-bt .etq{margin-left:2px}
+.folha-veu{position:fixed;inset:0;background:var(--veu);z-index:60}
+.folha{position:fixed;left:0;right:0;bottom:0;z-index:61;max-width:720px;margin:0 auto;background:var(--sup);border-radius:18px 18px 0 0;
+  box-shadow:var(--sombra);max-height:78vh;display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom,0px)}
+.folha-cab{display:flex;gap:10px;align-items:flex-start;padding:14px 14px 10px;border-bottom:1px solid var(--linha)}
+.folha-corpo{overflow:auto;overscroll-behavior:contain;padding-bottom:10px}
 .nd-bt[aria-pressed="true"]{background:var(--polen-suave);border-color:var(--polen);color:var(--polen)}
 .nd-txt{font-size:.55em;color:var(--polen);font-weight:700}
 .iso-chips{display:flex;flex-wrap:wrap;gap:6px}
@@ -148,12 +155,16 @@ a{color:var(--azul)}
 @keyframes pisca{50%{opacity:.25}}
 main{flex:1;width:100%;max-width:720px;margin:0 auto;padding:14px 16px calc(98px + env(safe-area-inset-bottom,0px))}
 .abas{position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--sup);border-top:1px solid var(--linha);
-  display:grid;grid-template-columns:repeat(7,minmax(0,1fr));padding:5px 4px calc(5px + env(safe-area-inset-bottom,0px))}
+  display:grid;grid-template-columns:repeat(5,minmax(0,1fr));padding:5px 6px calc(5px + env(safe-area-inset-bottom,0px))}
 .abas button{position:relative;background:none;border:0;border-radius:12px;padding:6px 1px 5px;cursor:pointer;color:var(--tinta3);
   display:flex;flex-direction:column;align-items:center;gap:2px;font-family:var(--f-titulo);font-weight:600;
-  font-size:11.5px;letter-spacing:0}
-@media (max-width:380px){.abas button{font-size:10.5px}.abas button .ico{width:21px;height:21px}}
-.abas button .ico{width:22px;height:22px}
+  font-size:12.5px;letter-spacing:0;min-height:52px;justify-content:center}
+@media (max-width:380px){.abas button{font-size:12px}}
+.abas button .ico{width:23px;height:23px}
+#b-ajustes{position:relative}
+#b-ajustes[aria-current="page"]{color:var(--azul);background:var(--azul-suave);border-color:var(--azul)}
+.bolinha-topo{position:absolute;top:-3px;right:-3px;width:12px;height:12px;border-radius:50%;background:var(--azul);border:2px solid var(--sup)}
+.nota.versao{display:flex;gap:10px;align-items:center;background:var(--azul-suave);color:var(--tinta)}
 .abas button[aria-current="page"]{color:var(--azul);background:var(--azul-suave)}
 .abas .bolinha{position:absolute;top:1px;left:calc(50% + 5px);min-width:16px;height:16px;border-radius:8px;background:var(--r3f);
   color:#fff;font-size:10px;line-height:16px;font-family:var(--f-texto);font-weight:700;padding:0 4px}
@@ -316,7 +327,7 @@ details.sec[open] > summary{border-bottom:1px solid var(--linha)}
 .ct-par{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:4px 12px 10px;border-bottom:1px solid var(--linha)}
 .ct-par:last-child{border-bottom:0}
 .ct-um{display:grid;grid-template-columns:1fr;gap:8px;padding:4px 12px 10px;border-bottom:1px solid var(--linha)}
-.ct{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;grid-template-rows:auto auto;gap:3px 5px;align-items:center;
+.ct{display:grid;grid-template-columns:36px minmax(0,1fr) 54px;grid-template-rows:auto auto;gap:3px 5px;align-items:center;
   border-radius:12px;padding:6px;background:var(--sup3);border:1px solid var(--linha)}
 .ct.pol{background:var(--polen-suave);border-color:color-mix(in srgb,var(--polen-fill) 55%,var(--linha))}
 .ct-r{grid-column:1/-1;font-family:var(--f-titulo);font-weight:700;font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--tinta2);
@@ -325,9 +336,11 @@ details.sec[open] > summary{border-bottom:1px solid var(--linha)}
 .ct-r .grao{width:8px;height:8px;border-radius:50%;background:var(--polen-fill);flex:none}
 .ct-b{height:48px;border-radius:11px;border:1px solid var(--linha2);background:var(--sup);font-size:26px;line-height:1;cursor:pointer;
   color:var(--tinta);display:grid;place-items:center;font-family:var(--f-titulo);font-weight:600;touch-action:manipulation;user-select:none;-webkit-user-select:none}
-.ct-b.mais{background:var(--azul);border-color:var(--azul);color:var(--sobre-azul)}
+.ct-b.mais{background:var(--azul);border-color:var(--azul);color:var(--sobre-azul);height:54px;font-size:30px}
+/* v2.5: o − é o toque menos usado — mais estreito e sem peso, para não ser apertado sem querer */
+.ct-b:not(.mais){height:42px;background:transparent;border-color:var(--linha);color:var(--tinta3);font-size:22px}
 .ct-b:active{transform:scale(.94)}
-.ct-n{height:48px;width:100%;min-width:0;text-align:center;border:1.5px solid var(--linha2);border-radius:11px;background:var(--sup);
+.ct-n{height:50px;width:100%;min-width:0;text-align:center;border:1.5px solid var(--linha2);border-radius:11px;background:var(--sup);
   font-family:var(--f-titulo);font-weight:700;font-size:27px;font-variant-numeric:tabular-nums;padding:0 2px;color:var(--tinta)}
 .ct-n.zero{color:var(--tinta3);font-weight:600}
 .ct-n:focus{outline:3px solid var(--azul);outline-offset:0;border-color:var(--azul)}
@@ -434,8 +447,9 @@ td.pol{color:var(--r3);font-weight:700}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 @media (max-width:380px){
-  .ct{grid-template-columns:40px minmax(0,1fr) 40px}
-  .ct-b{height:46px}
+  .ct{grid-template-columns:30px minmax(0,1fr) 48px;gap:3px 4px;padding:5px}
+  .ct-b.mais{height:52px}
+  .ct-n{font-size:24px;padding:0}
   .ct-n{font-size:24px;height:46px}
   .form{grid-template-columns:1fr}
 }
@@ -452,6 +466,7 @@ main.com-rodape{padding-bottom:calc(176px + env(safe-area-inset-bottom,0px))}
     <div class="topo-acoes">
       <button type="button" class="btn-ico chip-gps" id="b-gps" aria-label="GPS — abrir o mapa"><i></i>GPS</button>
       <button type="button" class="btn-ico" id="b-sol" aria-label="Modo sol: contraste máximo" aria-pressed="false"></button>
+      <button type="button" class="btn-ico" id="b-ajustes" aria-label="Ajustes" aria-current="false"></button>
     </div>
   </header>
   <main id="tela"><p style="padding:24px;color:#66728A">Abrindo a Caderneta…</p></main>
@@ -1202,7 +1217,7 @@ const FORMATO_PACOTE_TESTE = "caderneta-pacote-teste";   /* pacote gerado pelo p
 const CFG_PADRAO = {
   tema:"auto", sol:false, vibrar:true, telaAcesa:true,
   plantasPorPonto:100, larguraBloco:4.5, machos:2,
-  mostrarPM:true, mostrarFP:false,
+  mostrarPM:true, mostrarFP:false, erNoTopo:false,
   representante:"", at:"", jaleco:"",
   gpsLigado:true, gpsTrilha:true, gpsPrecisao:30,
   msgDecimal:".", msgMaiusculas:true, msgRecomendacao:"risco", msgProxima:false,
@@ -3805,6 +3820,7 @@ const ICONES = {
   agenda:'<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M8.5 3v4M15.5 3v4M8 14h3M8 17h6"/>',
   camera:'<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.6"/>',
   ajustes:'<circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.6M12 18.6v2.6M2.8 12h2.6M18.6 12h2.6M5.5 5.5l1.8 1.8M16.7 16.7l1.8 1.8M5.5 18.5l1.8-1.8M16.7 7.3l1.8-1.8"/>',
+  engrenagem:'<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
 };
 function ico(n, extra){ return '<svg class="ico' + (extra ? " " + extra : "") + '" viewBox="0 0 24 24" aria-hidden="true">' + (ICONES[n] || "") + "</svg>"; }
 /* v2.5: marca do Vana (Vána, a Valië das flores; os Vanir; vana = bosque) e da Orshu, dona do Vana */
@@ -3928,7 +3944,7 @@ function carimbo(){
    TELAS — cada função devolve o HTML de uma tela.
    ===================================================================== */
 const S = {tela:"campos", campoId:null, inspId:null, pontoIdx:null, busca:""};
-const ABA_DA_TELA = {campos:"campos", campo:"campos", registro:"campos", agenda:"agenda", colheita:"agenda", insp:"contagem", ponto:"contagem", mapa:"mapa", rel:"rel", dados:"dados", ajustes:"ajustes"};
+const ABA_DA_TELA = {campos:"campos", campo:"campos", registro:"campos", agenda:"agenda", colheita:"agenda", insp:"contagem", ponto:"contagem", mapa:"mapa", rel:"contagem", dados:"dados", ajustes:""};
 const ABERTOS = new Set(["sec-pontos", "sec-enviar"]);
 let instalarEvt = null;
 
@@ -4008,7 +4024,7 @@ function telaCampos(){
   const nHoje = DB.campos.filter(c => AG[c.id] && (AG[c.id].tipo === "hoje" || AG[c.id].tipo === "atrasada")).length;
   let h = '<div class="cab"><div class="cresce"><h2>Campos</h2><div class="sub">' + DB.campos.length + " campo(s) · " + DB.inspecoes.length + " inspeção(ões) neste aparelho" +
     (nHoje ? " · <b>" + nHoje + " para inspecionar hoje</b>" : "") + "</div></div></div>";
-  h += '<div class="pilha">' + avisoPrevia() + htmlLicenca() + htmlLembreteCopia() + htmlPausadas();
+  h += '<div class="pilha">' + avisoPrevia() + htmlVersaoNova() + htmlLicenca() + htmlLembreteCopia() + htmlPausadas();
   if (pend) h += '<div class="nota alerta linha"><span class="cresce"><b>' + pend + (pend === 1 ? " inspeção ainda não foi" : " inspeções ainda não foram") + "</b> para o computador.</span>" +
                  '<button class="btn peq" data-a="ir" data-para="dados">' + ico("compartilhar") + " Enviar</button></div>";
   h += '<div class="btns"><button class="btn pri" data-a="novo-campo">' + ico("mais") + ' Novo campo</button><button class="btn" data-a="receber">' + ico("receber") + " Receber do PC</button></div>";
@@ -4489,6 +4505,17 @@ function pfMensagem(i, d){
 }
 
 /* ================================================================= PONTO */
+/* v2.5: caminhamento sem sair do ponto — planta vista andando entre os pontos. Abre uma folha
+   por cima do ponto com os mesmos contadores da seção Caminhamento da inspeção; cada + grava
+   também a posição do GPS (se houver sinal recente), igual à seção. */
+function nCamDe(i){ return CH_FORA.reduce((s, k) => s + num(i.caminhamento[k]), 0); }
+function folhaCaminhamento(i){
+  return '<div class="folha-veu" data-a="cam-fechar"></div><div class="folha" role="dialog" aria-label="Caminhamento">' +
+    '<div class="folha-cab"><div class="cresce"><b>Caminhamento</b><div class="peq mut">Plantas vistas entre os pontos (fora da contagem).' +
+    (GPS.ult ? " Cada <b>+</b> marca o lugar no mapa." : " Sem GPS: só a contagem é gravada.") + "</div></div>" +
+    '<button class="btn pri peq" data-a="cam-fechar">Pronto</button></div>' +
+    '<div class="folha-corpo">' + gruposTipos("cam", i.caminhamento) + gruposAtipicas("cam", i.caminhamento) + "</div></div>";
+}
 function telaPonto(){
   const i = inspPor(S.inspId);
   if (!i) return vazio("Ponto", "Nenhuma inspeção aberta.");
@@ -4500,11 +4527,13 @@ function telaPonto(){
     '<button class="btn-ico" data-a="ponto-ir" data-d="1" aria-label="Próximo ponto"' + (k >= i.pontos.length - 1 ? " disabled" : "") + ">" + ico("dir") + "</button></div>" +
     '<div id="pt-soma">' + htmlSomaPonto(i, p, c) + "</div>" +
     /* v2.5 (etapa 21): bloco que ainda não foi despendoado — o P.T. dele (que começa em 100) não entra na média */
-    '<button class="btn peq nd-bt" data-a="ponto-nd" aria-pressed="' + (p.nd ? "true" : "false") + '">' + (p.nd ? "✓ " : "") + "Bloco não despendoado</button>" +
+    '<div class="pt-acoes"><button class="btn peq nd-bt" data-a="ponto-nd" aria-pressed="' + (p.nd ? "true" : "false") + '">' + (p.nd ? "✓ " : "") + "Bloco não despendoado</button>" +
+    '<button class="btn peq cam-bt" data-a="cam-abrir">' + ico("mais") + " Caminhamento" + (nCamDe(i) ? ' <span class="etq">' + nCamDe(i) + "</span>" : "") + "</button></div>" +
     (p.nd ? '<p class="peq mut" style="margin:4px 0 0">Fora da média do P.T.; E.R., machos e pendões contam normalmente.</p>' : "") + "</div>";
   h += '<div class="pilha">';
   h += '<div id="pt-gps" class="pt-gps">' + htmlGpsPonto(i, p) + "</div>";
-  h += '<div class="cartao"><div class="ct-tit" style="padding-top:12px"><span class="rotulo">Fêmea com pendão — entram na soma das ' + plantasDoPonto(p, pppDo(c)) + " plantas</span></div>" + gruposTipos("pt", p.c) + "</div>";
+  if (S.camFolha) h += folhaCaminhamento(i);
+  const cartaoPendao = '<div class="cartao"><div class="ct-tit" style="padding-top:12px"><span class="rotulo">Fêmea com pendão — entram na soma das ' + plantasDoPonto(p, pppDo(c)) + " plantas</span></div>" + gruposTipos("pt", p.c) + "</div>";
   let em = '<div class="ct-tit" style="padding-top:12px"><span class="rotulo">Estigma e machos — contados à parte</span></div><div class="ct-par">' +
     ctHTML("pt", "ER", p.c.ER, "E.R. estigma", false, "Estigma receptivo");
   const nm = Math.max(1, Math.min(3, num(c.machos, 2) || 2));
@@ -4513,7 +4542,8 @@ function telaPonto(){
     em += ctHTML("pt", mk, p.c[mk], "Macho " + (j + 1) + " pol", false, "Macho " + (j + 1) + " polinizando");
   });
   em += "</div>";
-  h += '<div class="cartao">' + em + "</div>";
+  /* v2.5: a ordem segue a preferência — em campo bem despendoado, E.R. e machos primeiro poupam rolagem */
+  h += DB.cfg.erNoTopo ? '<div class="cartao">' + em + "</div>" + cartaoPendao : cartaoPendao + '<div class="cartao">' + em + "</div>";
   const nAt = CH_ATIP.reduce((s, x) => s + num(p.c[x]), 0);
   h += sec("sec-pt-atip", "Atípicas (rogue e tiguera)", nAt ? nAt + " planta(s)" : "nenhuma", gruposAtipicas("pt", p.c), {liso:true});
   if (DB.cfg.mostrarFP || num(p.c.FP)) h += sec("sec-pt-fp", "Flor precoce (F.P.)", num(p.c.FP) ? String(num(p.c.FP)) : "", '<div class="ct-um">' + ctHTML("pt", "FP", p.c.FP, "F.P.", false, "Flor precoce") + "</div>", {liso:true});
@@ -4774,7 +4804,7 @@ function telaDados(){
   const pend = inspsParaEnviar();
   const reais = DB.inspecoes.filter(x => !x.exemplo);
   let h = '<div class="cab"><div class="cresce"><h2>Dados</h2><div class="sub">Enviar ao computador, receber, cópias de segurança e ajustes</div></div></div>';
-  h += '<div class="pilha">' + avisoPrevia();
+  h += '<div class="pilha">' + avisoPrevia() + htmlVersaoNova();
   let env = '<div class="pilha" style="gap:11px">';
   env += pend.length ? '<div class="nota alerta"><b>' + pend.length + (pend.length === 1 ? " inspeção nova ou alterada" : " inspeções novas ou alteradas") + "</b> desde o último envio (" + quandoTxt(DB.cfg.ultimoEnvio) + ").</div>"
     : '<div class="nota">' + (reais.length ? "Tudo já foi enviado (último envio " + quandoTxt(DB.cfg.ultimoEnvio) + ")." : "Ainda não há inspeções para enviar (as de exemplo não vão para o PC).") + "</div>";
@@ -4812,8 +4842,8 @@ function telaDados(){
 }
 /* v2.5: aba Ajustes — quem usa (usuário e aparelho), segurança (PIN e chave), licença e preferências */
 function telaAjustes(){
-  let h = '<div class="cab"><div class="cresce"><h2>Ajustes</h2><div class="sub">Usuário, PIN, chave de proteção, licença e preferências</div></div></div>';
-  h += '<div class="pilha">' + avisoPrevia();
+  let h = '<div class="cab">' + voltar("campos") + '<div class="cresce"><h2>Ajustes</h2><div class="sub">Usuário, PIN, chave de proteção, licença e preferências</div></div></div>';
+  h += '<div class="pilha">' + avisoPrevia() + htmlVersaoNova();
   h += secUsuario() + secPin() + secProtecao() + secLicenca();
   h += sec("sec-ajustes", "Preferências", "", htmlAjustes(), {aberto:false});
   h += sec("sec-instalar", "Instalar no celular", estadoInstalacao().curto, htmlInstalar());
@@ -4959,6 +4989,7 @@ function htmlAjustes(){
     fChk("cfg.telaAcesa", "Manter a tela acesa durante a contagem", c.telaAcesa) +
     fChk("cfg.mostrarPM", "Mostrar PM (planta média) nos pontos", c.mostrarPM) +
     fChk("cfg.mostrarFP", "Mostrar F.P. (flor precoce) nos pontos", c.mostrarFP) +
+    fChk("cfg.erNoTopo", "Mostrar E.R. e machos no topo do ponto (antes dos pendões)", c.erNoTopo) +
     '<div class="form">' + fIn("cfg.representante", "Representante padrão (RC)", c.representante, {}) + fIn("cfg.at", "AT padrão", c.at, {}) +
     fIn("cfg.jaleco", "Nº do jaleco", c.jaleco, {}) + fIn("cfg.plantasPorPonto", "Plantas por ponto (novos campos)", c.plantasPorPonto, {t:"i"}) +
     fIn("cfg.larguraBloco", "Largura do bloco (m)", c.larguraBloco, {t:"n"}) +
@@ -5354,7 +5385,7 @@ async function pdfComFotos(modo){
    nos contadores, exportar/importar.
    ===================================================================== */
 const PILHA = [];
-const ULTIMA = {campos:"campos", contagem:"insp", mapa:"mapa", rel:"rel", dados:"dados", ajustes:"ajustes"};
+const ULTIMA = {campos:"campos", contagem:"insp", mapa:"mapa", dados:"dados"};
 function estadoAtual(){ return {tela:S.tela, campoId:S.campoId, inspId:S.inspId, pontoIdx:S.pontoIdx}; }
 function ir(tela, extra, opc){
   opc = opc || {};
@@ -5366,6 +5397,7 @@ function ir(tela, extra, opc){
 }
 window.addEventListener("popstate", () => {
   if (DLG.atual) { DLG.atual(null); try { history.pushState({n:PILHA.length}, ""); } catch (e) {} return; }
+  if (S.camFolha && S.tela === "ponto") { S.camFolha = false; render(); try { history.pushState({n:PILHA.length}, ""); } catch (e) {} return; }   /* voltar do celular fecha a folha */
   const ant = PILHA.pop();
   if (ant) { Object.assign(S, ant); render(); window.scrollTo(0, 0); }
 });
@@ -5394,6 +5426,7 @@ function irAba(aba){
 /* ---------------------------------------------------------------- render */
 function render(){
   garantirRegras();
+  if (S.tela !== "ponto") S.camFolha = false;
   retravarFora();
   if (S.tela === "ponto") {
     const mud = ativarContagem(inspPor(S.inspId)), outras = mud.filter(x => x !== "retomada");
@@ -5425,6 +5458,7 @@ function render(){
   v.classList.toggle("com-rodape", S.tela === "ponto");
   ULTIMA[ABA_DA_TELA[S.tela]] = S.tela;
   document.querySelectorAll("#abas button").forEach(b => b.setAttribute("aria-current", b.dataset.aba === ABA_DA_TELA[S.tela] ? "page" : "false"));
+  { const ba = document.getElementById("b-ajustes"); if (ba) ba.setAttribute("aria-current", S.tela === "ajustes" ? "page" : "false"); }
   pintarTopo();
   depoisDeRender();
 }
@@ -5454,6 +5488,7 @@ function pintarTopo(){
   }
   const b = document.getElementById("b-gps");
   if (b) { b.className = "btn-ico chip-gps " + classeGPS(); b.innerHTML = "<i></i>" + esc(textoGPS()); }
+  const bv = document.querySelector("#b-ajustes .bolinha-topo"); if (bv) bv.hidden = !VERSAO_NOVA;
   const bd = document.querySelector('#abas button[data-aba="dados"] .bolinha');
   if (bd) { bd.textContent = n; bd.hidden = !n; }
 }
@@ -5518,7 +5553,7 @@ function valorDe(el){
   if (t === "i") return v.trim() === "" ? "" : Math.round(num(v, 0));
   return v;
 }
-const RERENDER = ["cfg.apelido", "insp.recomAuto", "cfg.mostrarPM", "cfg.mostrarFP", "cfg.msgRecomendacao", "campo.caminho.forma", "campo.machos", "campo.gleba",
+const RERENDER = ["cfg.apelido", "cfg.erNoTopo", "insp.recomAuto", "cfg.mostrarPM", "cfg.mostrarFP", "cfg.msgRecomendacao", "campo.caminho.forma", "campo.machos", "campo.gleba",
                   "cfg.gpsTrilha", "cfg.msgDecimal", "cfg.msgProxima", "cfg.msgMaiusculas", "cfg.pinMin"];
 function aoMudarBind(el, fim){
   const path = el.dataset.b, a = alvoBind(path);
@@ -5692,6 +5727,7 @@ document.addEventListener("click", async e => {
   const aba = e.target.closest("#abas button[data-aba]");
   if (aba) { irAba(aba.dataset.aba); return; }
   if (e.target.closest("#b-gps")) { ir("mapa"); return; }
+  if (e.target.closest("#b-ajustes")) { if (S.tela === "ajustes") voltarPara("campos"); else ir("ajustes"); return; }
   if (e.target.closest("#b-sol")) { DB.cfg.sol = !DB.cfg.sol; salvar(); aplicarTema(); render(); aviso(DB.cfg.sol ? "Modo sol ligado" : "Modo sol desligado"); return; }
   const b = e.target.closest("[data-a]"); if (!b || b.disabled) return;
   if (!b.closest("#tela") && !b.closest(".rodape-acao")) return;
@@ -5805,6 +5841,9 @@ async function acao(a, b, id){
     case "chave-remover": return chaveRemover(id);
     case "usuario-nome": return usuarioNome();
     case "ir-ajustes": return ir("ajustes");
+    case "cam-abrir": S.camFolha = true; render(); return;
+    case "cam-fechar": S.camFolha = false; render(); return;
+    case "atualizar-app": if (VERSAO_NOVA) { aviso("Atualizando…"); VERSAO_NOVA.postMessage("pular-espera"); } return;
     case "wifi-trocar": return trocarWifi();
     case "ag-filtro": S.agFiltro = b.dataset.v; render(); return;
     case "regiao": DB.cfg.regiao = b.dataset.v || ""; salvar(); render(); return;
@@ -7460,16 +7499,25 @@ function semearExemplo(){
 }
 
 function montarCasca(){
-  const abas = [["campos", "campos", "Campos"], ["agenda", "agenda", "Agenda"], ["contagem", "contagem", "Contagem"], ["mapa", "mapa", "Mapa"], ["rel", "relatorio", "Relatório"], ["dados", "dados", "Dados"], ["ajustes", "ajustes", "Ajustes"]];
+  const abas = [["campos", "campos", "Campos"], ["agenda", "agenda", "Agenda"], ["contagem", "contagem", "Contagem"], ["mapa", "mapa", "Mapa"], ["dados", "dados", "Dados"]];   /* v2.5: 5 abas — Relatório fica dentro da inspeção, Ajustes na engrenagem do topo */
   document.getElementById("abas").innerHTML = abas.map(([a, i, r]) => '<button type="button" data-aba="' + a + '" aria-current="false">' + ico(i) + "<span>" + r + "</span>" + (a === "dados" ? '<span class="bolinha" hidden></span>' : "") + "</button>").join("");
   document.getElementById("marca").outerHTML = MARCA;
   document.getElementById("b-sol").innerHTML = ico("sol");
+  document.getElementById("b-ajustes").innerHTML = ico("engrenagem") + '<span class="bolinha-topo" hidden></span>';
   if (TESTE) {
     const tn = document.querySelector(".topo-nome");
     if (tn) tn.insertAdjacentHTML("beforeend", '<span class="selo-teste">TESTE</span>');
   }
 }
 
+/* v2.5: a versão nova conferida fica guardada aqui até a pessoa atualizar — o aviso some em 15 s,
+   mas a faixa (Campos, Dados, Ajustes) e o ponto na engrenagem continuam até atualizar */
+var VERSAO_NOVA = null;
+function htmlVersaoNova(){
+  if (!VERSAO_NOVA) return "";
+  return '<div class="nota versao"><span class="cresce"><b>Versão nova do app pronta</b> (assinada pela Orshu). Atualize quando terminar a contagem — os dados ficam no aparelho.</span>' +
+    '<button class="btn peq pri" data-a="atualizar-app">Atualizar</button></div>';
+}
 function registrarPWA(){
   if (emVisualizador() || !/^https?:$/.test(location.protocol)) return;
   const cab = document.head || document.getElementsByTagName("head")[0];
@@ -7483,7 +7531,11 @@ function registrarPWA(){
        que já está instalada e é de confiança) */
     const oferecer = async w => {
       const c = await conferirAtualizacao();
-      if (c.ok) { aviso("Versão nova do app pronta (assinada pela Orshu)", {rotulo:"Atualizar", fn:() => w.postMessage("pular-espera")}, 15000); return; }
+      if (c.ok) {
+        VERSAO_NOVA = w; pintarTopo();
+        if (["ponto", "insp"].indexOf(S.tela) < 0) render();     /* no meio da contagem não redesenha: só o ponto na engrenagem */
+        aviso("Versão nova do app pronta (assinada pela Orshu)", {rotulo:"Atualizar", fn:() => w.postMessage("pular-espera")}, 15000); return;
+      }
       const v = await dialogo({titulo:"Atualização NÃO conferida", texto:"A versão nova publicada no site não tem a assinatura da Orshu (" + c.motivo + "). " +
         "Pode ser um erro na publicação ou alguém mexeu no site. Não atualize e avise quem publica a Caderneta. Os seus dados continuam no aparelho.",
         botoes:[{rotulo:"Atualizar mesmo assim", valor:"sim"}, {rotulo:"Não atualizar", valor:null, classe:"pri"}]});
